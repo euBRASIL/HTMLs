@@ -1,0 +1,93 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+        * { box-sizing: border-box; }
+          #body { font-family: "Benton Sans", "Helvetica Neue", helvetica, arial, sans-serif; margin: 2em; }
+          #h1 { font-style: italic; color: #187e46; }
+          #file-selector { border: 5px dashed rgba(10, 132, 212, 0.767); width: 440px; height: 272px; }
+        </style>
+
+    </head>
+<body>
+    <h1>Arrastar & Soltar </h1>
+
+    <div id="file-selector"></div>
+    <ul id="output"></ul>
+
+
+    <!-- input type="file" id="file-selector" multiple accept=".txt" -->
+
+<script>
+    const fileSelector = document.getElementById('file-selector')
+    const dropArea = document.getElementById('drop-area')
+    const output = document.getElementById('output');
+
+/*
+    fileSelector.addEventListener('change', (event) => {
+        const fileList = event.target.files;
+        console.log(fileList);
+    })
+
+    dropArea.addEventListener('dragover', (event) => {
+        event.stopPropagation()
+        event.preventDefault()
+        // Style the drag-and-drop as a "copy file" operation.
+        event.dataTransfer.dropEffect = 'copy'
+    })
+
+    dropArea.addEventListener('drop', (event) => {
+        event.stopPropagation()
+        event.preventDefault()
+        const fileList = event.dataTransfer.files
+        console.log(fileList)
+    })
+
+    function readFile(file) {
+        const reader = new FileReader()
+        reader.addEventListener('load', (event) => {
+        const result = event.target.result
+        // Do something with result
+    });
+
+    reader.addEventListener('progress', (event) => {
+        if (event.loaded && event.total) {
+        const percent = (event.loaded / event.total) * 100
+        console.log(`Progress: ${Math.round(percent)}`)
+        }
+    })
+
+    reader.readAsDataURL(file)
+}
+*/
+
+if (window.FileList && window.File) {
+        fileSelector.addEventListener('dragover', event => {
+          event.stopPropagation();
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+        });
+        fileSelector.addEventListener('drop', event => {
+            const files = event.dataTransfer.files;
+            output.innerHTML = '';
+            event.stopPropagation();
+            event.preventDefault();
+          
+            for (let i = 0; i < files.length; i++) {
+                const li = document.createElement('li');
+                const file = files[i];
+                const name = file.name ? file.name : 'NOT SUPPORTED';
+                const type = file.type ? file.type : 'NOT SUPPORTED';
+                const size = file.size ? file.size : 'NOT SUPPORTED';
+                // Arvore DOM, imprime uma nova linha com o valor das variaveis JavaScript
+                li.textContent = `bytes: ${size}, tipo: ${type}, nome: ${name}`;
+                output.appendChild(li);
+            }
+        }); 
+      }
+</script>
+
+</body></html>

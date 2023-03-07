@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Endereço de Bitcoin em xadrez</title>
+    <style>
+      #address-input {
+        width: 100%;
+        font-size: 18px;
+        padding: 12px 20px;
+        margin: 8px 0;
+        box-sizing: border-box;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+      }
+
+      #chess-address {
+        font-size: 36px;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="address-input">Endereço de seu Bitcoin ( Base58Check de 34 caracteres ) : exemplo "3CvLtaK9XKBBLJcSdWtJ8RtHFn4gBjgFQ4"</label>
+    <input type="text" id="address-input">
+    <div id="chess-address"></div>
+
+    <script>
+      function hexToChessSymbol(hexChar) {
+        var chessSymbols = {
+          "0": "#", // espaço em branco
+
+          "0": "⍝", // torre branca
+          "1": "☝", // cavalo branco
+
+          "2": "◎", // bispo branco
+          "3": "≋", // rainha branca
+          "4": "❖", // rei branco
+          "5": "※", // torre preta
+          "6": "✻", // cavalo preto
+          "7": "☯", // bispo preto
+          "8": "❊", // rainha preta
+          "9": "＠",  // rei preto
+
+          "A": "♖", // torre branca
+          "E": "♘", // cavalo branco
+          "I": "♗", // bispo branco
+          "O": "♕", // rainha branca
+          "U": "♔", // rei branco
+          "a": "♜", // torre preta
+          "e": "♞", // cavalo preto
+          "i": "♝", // bispo preto
+          "o": "♛", // rainha preta
+          "u": "♚",  // rei preto
+
+          "B": "𝐁",
+          "C": "𝐂",
+          "D": "𝐃",
+          "F": "𝐅",
+          "G": "𝐆",
+          "H": "𝐇",
+          "J": "𝐉",
+
+          "b": "𝐁",
+          "c": "𝐂",
+          "d": "𝐃",
+          "f": "𝐅",
+          "g": "𝐆",
+          "h": "𝐇",
+          "j": "𝐉",
+
+          "K": "𝐊",
+          "L": "𝐋",
+          "M": "𝐌",
+          "N": "𝐍",
+          "P": "𝐏",
+          "Q": "𝐐",
+          "R": "𝐑",
+
+          "k": "𝐊",
+          "l": "𝐋",
+          "m": "𝐌",
+          "n": "𝐍",
+          "p": "𝐏",
+          "q": "𝐐",
+          "r": "𝐑",
+
+          "S": "𝐒",
+          "T": "𝐓",
+          "V": "𝐕",
+          "W": "𝐖",
+          "X": "𝐗",
+          "Y": "𝐘",
+          "Z": "𝐙",
+
+          "s": "𝐒",
+          "t": "𝐓",
+          "v": "𝐕",
+          "w": "𝐖",
+          "x": "𝐗",
+          "y": "𝐘",
+          "z": "𝐙",          
+        };
+
+        return chessSymbols[hexChar] || "#";
+      }
+
+
+function generateChessTable() {
+
+       // "7": "♟", // peão preto
+       // "1": "♙", // peão branco
+
+  var table = {};
+  var hexValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+
+  for (var i = 0; i < hexValues.length; i++) {
+    table[hexValues[i]] = "&#x265F;"; // Peão branco
+    table[hexValues[i].toLowerCase()] = "&#x2659;"; // Peão preto
+  }
+
+  table["2"] = "&#x2658;"; // Cavalo branco
+  table["2".toLowerCase()] = "&#x265E;"; // Cavalo preto
+  table["3"] = "&#x2657;"; // Bispo branco
+  table["3".toLowerCase()] = "&#x265D;"; // Bispo preto
+  table["4"] = "&#x2656;"; // Torre branca
+  table["4".toLowerCase()] = "&#x265C;"; // Torre preta
+  table["5"] = "&#x2655;"; // Rainha branca
+  table["5".toLowerCase()] = "&#x265B;"; // Rainha preta
+  table["6"] = "&#x2654;"; // Rei branco
+  table["6".toLowerCase()] = "&#x265A;"; // Rei preto
+
+  return table;
+}
+
+
+
+      function getAddressChessSymbols(address) {
+        var chessAddress = "";
+        for (var i = 0; i < address.length; i++) {
+          chessAddress += hexToChessSymbol(address.charAt(i).toUpperCase());
+
+        }
+        return chessAddress;
+      }
+
+      var addressInput = document.getElementById("address-input");
+      var chessAddressDiv = document.getElementById("chess-address");
+
+      addressInput.addEventListener("input", function() {
+        var address = addressInput.value;
+        var chessAddress = getAddressChessSymbols(address);
+        chessAddressDiv.textContent = chessAddress;
+      });
+    </script>
+  </body>
+</html>

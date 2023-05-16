@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Rede de Octetos</title>
+    <style>
+      /* Estilos para a tabela */
+      table {
+        border-collapse: collapse;
+      }
+
+      th, td {
+        border: 1px solid black;
+        padding: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rede de Octetos</h1>
+    <table id="network-table">
+      <tr>
+        <th>Endereço</th>
+        <th>Máscara</th>
+        <th>Gateway</th>
+        <th>Status</th>
+      </tr>
+    </table>
+
+    <script>
+      // Dados da rede
+      const networkData = [
+        { address: "192.168.0.1", mask: "255.255.255.0", gateway: "192.168.0.1", status: "Ativo" },
+        { address: "192.168.0.2", mask: "255.255.255.0", gateway: "192.168.0.1", status: "Ativo" },
+        { address: "192.168.0.3", mask: "255.255.255.0", gateway: "192.168.0.1", status: "Inativo" }
+      ];
+
+      // Preenche a tabela com os dados da rede
+      const table = document.getElementById("network-table");
+      networkData.forEach(data => {
+        const row = table.insertRow();
+        const addressCell = row.insertCell();
+        const maskCell = row.insertCell();
+        const gatewayCell = row.insertCell();
+        const statusCell = row.insertCell();
+        addressCell.innerHTML = data.address;
+        maskCell.innerHTML = data.mask;
+        gatewayCell.innerHTML = data.gateway;
+        statusCell.innerHTML = data.status;
+      });
+    </script>
+  </body>
+</html>

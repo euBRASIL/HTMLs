@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>jQuery Notify</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
+		<link rel="stylesheet" href="https://previews.customer.envatousercontent.com/files/13743985/css/notify.css" />
+		
+		<style>
+			body{
+				margin: 20px 0 40px 0;
+			}
+			
+			.container {
+				padding: 20px;
+				border-radius: 10px;
+				background: #D8F0C0;
+			}
+			
+			#inpage_test {
+				display: none;	
+			}
+			
+			.notification #inpage_test {
+				display: block;
+			}
+						
+			.notification h3 {
+				color: #fff;
+			}
+			
+			#multiple_clicks {
+				color: #878B83; 
+				display: none;
+			}
+			
+			body small {
+				color: #878B83;
+			}
+		</style>
+	</head>
+	
+	<body>
+		<div class="container">
+			<h1>jQuery Notify Demo</h1>
+			<p>Use the buttons below to test the various ways you can call up a notification. The demo's I've laid out for you are in their most basic forms, the sky is really the limit when it comes to implementation!</p>
+			
+			<p>Here's how you would call jQuery Notify - <code>$.notify(options object, duration);</code></p>
+			
+			<p>If you'd like any help implementing <strong>jQuery Notify</strong> please feel free to post a comment or email me - <em id="email"></em>
+			
+			<h2 style="margin-top: 30px;">Inline HTML</h2>
+			<pre style="margin-bottom:  10px;;">
+$('#inline_html').click(function(){
+    $.notify({
+        inline: true,
+        html: '&lt;h3&gt;This is inline&lt;/h3&gt;&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;p&gt;'
+    }, 3000)
+})</pre>
+			<button class="btn primary" id="inline_html">Test Inline HTML</button> <small id="multiple_clicks">- Try clicking me a few times!</small>
+			
+			<h2 style="margin-top: 30px;">Inpage HTML <small>- this uses a hidden &lt;div&gt; on this page</small></h2>
+			<pre style="margin-bottom:  10px;;">
+$('#inpage_html').click(function(){
+    $.notify({
+        inline: true,
+        href: '#inpage_test'
+    }, 3000)
+})</pre>
+			<button class="btn primary" id="inpage_html">Test Inpage HTML</button>
+			
+			<h2 style="margin-top: 30px;">Offsite HTML <small>- this grabs an image from another site</small></h2>
+			<pre style="margin-bottom:  10px;;">
+$('#offsite_html').click(function(){
+    $.notify({
+        inline: false,
+        href: 'http://dribbble.com/system/users/5227/screenshots/298369/hello_chicago_teaser.jpg?1319158366'
+    }, 3000)
+})</pre>
+			<button class="btn primary" id="offsite_html">Test Offsite HTML</button>
+			
+			<h2 style="margin-top: 30px;">Callback Functions <small>- there are 4 in total!</small></h2>
+			<pre style="margin-bottom: 10px;;">
+$('#callback_test').click(function(){
+    $.notify({
+        inline: true,
+        html: '&lt;h3&gt;This is inline&lt;/h3&gt;&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;p&gt;',
+        onStart: function(){ alert('This is onStart()!') },
+        onComplete: function(){ alert('This is onComplete()!') },
+        onCleanup: function(){ alert('This is onCleanup()!') },
+        onClosed: function(){ alert('This is onClosed()!') }
+    }, 3000)
+})</pre>
+			<button class="btn primary" id="callback_test">Test Callback Functions</button> <small id="alert_area" style="color: #F44B4B"></small>
+			
+			<h2 style="margin-top: 30px;">Close Button <small>- use your own HTML for the close button</small></h2>
+			<pre style="margin-bottom:  10px;;">
+$('#close_test').click(function(){
+    $.notify({
+        inline: true,
+        href: '#inpage_test',
+        close: '&lt;a href="#"&gt;Close Notification&lt;/a&gt;'
+    })
+})</pre>
+			<button class="btn primary" id="close_test">Test Close Link</button>
+		</div>
+		
+		<div id="inpage_test">
+			<h3>This is inpage</h3>
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+		</div>
+		
+		<script src="https://previews.customer.envatousercontent.com/files/13743985/js/jquery-1.7.1.min.js"></script>
+		<script src="https://previews.customer.envatousercontent.com/files/13743985/js/jquery-notify.js"></script>
+		<script>			
+			$(function(){
+				$('#inline_html').click(function(){
+					$('#multiple_clicks').show();
+					$.notify({
+						inline: true,
+						html: '<h3>This is inline</h3><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<p>'
+					}, 3000);
+				})
+				
+				$('#inpage_html').click(function(){
+					$.notify({
+						inline: true,
+						href: '#inpage_test'
+					})
+				})
+				
+				$('#offsite_html').click(function(){
+					$.notify({
+						inline: false,
+						href: 'http://dribbble.com/system/users/5227/screenshots/298369/hello_chicago_teaser.jpg?1319158366'
+					}, 3000)
+				})
+				
+				$('#callback_test').click(function(){
+					var alert_area = $('#alert_area');
+					$.notify({
+						inline: true,
+						html: '<h3>This is inline</h3><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.<p>',
+						onStart: function(){ alert_area.text('- onStart Fired!') },
+						onComplete: function(){ alert_area.text('- onComplete Fired!') },
+						onCleanup: function(){ alert_area.text('- onCleanup Fired!') },
+						onClosed: function(){ alert_area.text('- onClosed Fired!') }
+					})
+				})
+				
+				$('#close_test').click(function(){
+					$.notify({
+						inline: true,
+						href: '#inpage_test',
+						close: '<a href="javascript:;">Close Notification</a>'
+					})
+				})
+				
+				$.notify({
+					inline: true,
+					html: '<h3>Hi There!</h3><p>Thanks for your interest in jQuery Notify!</p><p>This notification will disappear after 5 seconds.</p>'
+				}, 5000)
+			})
+		</script>
+		
+		<script> $(function(){ $('#email').html('<a href="mailto:hello@sambenson.co.uk">hello@sambenson.co.uk</a>'); }) // This has nothing to do with jQuery Notify...  </script>
+	</body>
+</html>

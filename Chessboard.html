@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    .board {
+      width: 400px;
+      height: 400px;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="board1" class="board"></div><br><br><br>
+  <button id="startBtn">Start Position</button>
+  <button id="clearBtn">Clear Board</button>
+  <br>
+  <textarea id="fen" rows="5"></textarea>
+  <br>
+  <button id="updateBtn">Update Board</button>
+</body>
+<script>
+  var board1 = Chessboard('board1', {
+    draggable: true,
+    dropOffBoard: 'trash',
+    sparePieces: true
+  });
+  $('#startBtn').on('click', board1.start);
+  $('#clearBtn').on('click', board1.clear);
+  $('#updateBtn').on('click', function() {
+    board1.position($('#fen').val());
+  });
+</script>
+</html>

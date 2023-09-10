@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-Br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contador TxT</title>
+</head>
+
+<body>
+    <h2>Contador .txt</h2>
+    <div class="year">01-Janeiro-2014</div>
+    <div class="countdown">
+        <a id="day">00</a> D |
+        <a id="hour">00</a> h :
+        <a id="minute">00</a> :
+        <a id="second">00</a> seg.
+    </div>
+    <script>
+        const dayEl = document.getElementById("day");
+        const hourEl = document.getElementById("hour");
+        const minuteEl = document.getElementById("minute");
+        const secondEl = document.getElementById("second");
+
+        const newYearTime = new Date("Jan 1, 2024 00:00:00").getTime();
+
+        updateCountdown();
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const gap = newYearTime - now;
+
+            const second = 1000;
+            const minute = second * 60;
+            const hour = minute * 60;
+            const day = hour * 24;
+
+            const d = Math.floor(gap / day);
+            const h = Math.floor((gap % day) / hour);
+            const m = Math.floor((gap % hour) / minute);
+            const s = Math.floor((gap % minute) / second);
+            dayEl.innerText = d;
+            hourEl.innerText = h;
+            minuteEl.innerText = m;
+            secondEl.innerText = s;
+            setTimeout(updateCountdown, 1000)
+        }
+    </script>
+</body>
+</html>

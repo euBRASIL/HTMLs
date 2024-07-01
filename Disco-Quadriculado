@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Percentual Circular</title>
+    <style>
+        .circle-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
+        }
+        svg {
+            width: 400px;
+            height: 400px;
+        }
+        .meter-container {
+            text-align: center;
+        }
+        .square {
+            width: 1%;
+            height: 1%;
+        }
+    </style>
+</head>
+<body>
+    <div class="circle-container">
+        <div class="meter-container">
+            <label for="disk_a">Disco Utilizado A:</label>
+            <meter id="disk_a" value="0.5">50%</meter><br>
+            <label for="disk_b">Disco Utilizado B:</label>
+            <meter id="disk_b" value="0.9">90%</meter><br>
+            <label for="disk_c">Disco Utilizado C:</label>
+            <meter id="disk_c" value="0.1">10%</meter>
+        </div>
+        <div>
+            <svg viewBox="-3 -3 45 45">
+                <circle class="background" cx="18" cy="18" r="20" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_a_path"></g>
+                <circle class="background" cx="18" cy="18" r="19" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_b_path"></g>
+                <circle class="background" cx="18" cy="18" r="18" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_c_path"></g>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const meterA = document.getElementById('disk_a');
+            const meterB = document.getElementById('disk_b');
+            const meterC = document.getElementById('disk_c');
+            const pathA = document.getElementById('disk_a_path');
+            const pathB = document.getElementById('disk_b_path');
+            const pathC = document.getElementById('disk_c_path');
+
+            function createSquares(path, value, radius) {
+                const numSquares = Math.floor(value * 100);
+                path.innerHTML = ''; // Clear existing squares
+
+                for (let i = 0; i < numSquares; i++) {
+                    const angle = (i / 100) * 2 * Math.PI - Math.PI / 2;
+                    const x = 18 + radius * Math.cos(angle);
+                    const y = 18 + radius * Math.sin(angle);
+
+                    const square = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    square.setAttribute('x', x);
+                    square.setAttribute('y', y);
+                    square.setAttribute('width', 0.6);
+                    square.setAttribute('height', 0.6);
+                    square.setAttribute('fill', (i % 2 === 0) ? 'blue' : 'white');
+                    square.setAttribute('transform', `rotate(${angle * (180 / Math.PI)} ${x} ${y})`);
+
+                    path.appendChild(square);
+                }
+            }
+
+            function animateMeter(meter, path, radius, endValue, duration) {
+                const increment = (endValue - 0) / (duration / 10);
+                let currentValue = 0;
+
+                function step() {
+                    currentValue += increment;
+                    if (currentValue <= endValue) {
+                        meter.value = currentValue;
+                        createSquares(path, currentValue, radius);
+                        requestAnimationFrame(step);
+                    }
+                }
+                step();
+            }
+
+            animateMeter(meterA, pathA, 20, 0.5, 5000);
+            animateMeter(meterB, pathB, 19, 0.9, 5000);
+            animateMeter(meterC, pathC, 18, 0.1, 5000);
+        });
+    </script>
+</body>
+</html>

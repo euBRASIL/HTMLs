@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Percentual Circular</title>
+	<link src="">
+    <style>
+        .circle-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
+        }
+        svg {
+            width: 400px;
+            height: 400px;
+        }
+        .meter-container {
+            text-align: center;
+        }
+        .square {
+            width: 1%;
+            height: 1%;
+        }
+    </style>
+</head>
+<body>
+    <div class="circle-container">
+        <div class="meter-container">
+            <label for="disk_a">Unidade F:</label>
+            <meter id="disk_a" value="0.10">10%</meter><br>
+            <label for="disk_b">Unidade E:</label>
+            <meter id="disk_b" value="0.15">15%</meter><br>
+            <label for="disk_c">Unidade D:</label>
+            <meter id="disk_c" value="0.20">20%</meter><br>
+            <label for="disk_d">Unidade C:</label>
+            <meter id="disk_d" value="0.25">25%</meter><br>
+            <label for="disk_e">Unidade B:</label>
+            <meter id="disk_e" value="0.30">30%</meter><br>
+            <label for="disk_f">Unidade A:</label>
+            <meter id="disk_f" value="0.35">35%</meter><br>
+            <label for="disk_g">Unidade 9:</label>
+            <meter id="disk_g" value="0.40">40%</meter><br>
+            <label for="disk_h">Unidade 8:</label>
+            <meter id="disk_h" value="0.45">45%</meter><br>
+            <label for="disk_i">Unidade 7:</label>
+            <meter id="disk_i" value="0.50">50%</meter><br>
+            <label for="disk_j">Unidade 6:</label>
+            <meter id="disk_j" value="0.55">55%</meter><br>
+            <label for="disk_k">Unidade 5:</label>
+            <meter id="disk_k" value="0.60">60%</meter><br>
+            <label for="disk_l">Unidade 4:</label>
+            <meter id="disk_l" value="0.65">65%</meter><br>
+            <label for="disk_m">Unidade 3:</label>
+            <meter id="disk_m" value="0.70">70%</meter><br>
+            <label for="disk_n">Unidade 2:</label>
+            <meter id="disk_n" value="0.75">75%</meter><br>
+            <label for="disk_o">Unidade 1:</label>
+            <meter id="disk_o" value="0.80">80%</meter><br>
+            <label for="disk_p">Unidade 0:</label>
+            <meter id="disk_p" value="0.85">85%</meter><br>
+        </div>
+        <div>
+            <svg viewBox="-3 -3 45 45">
+                <circle class="background" cx="18" cy="18" r="20" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_a_path"></g>
+                <circle class="background" cx="18" cy="18" r="19" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_b_path"></g>
+                <circle class="background" cx="18" cy="18" r="18" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_c_path"></g>
+                <circle class="background" cx="18" cy="18" r="17" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_d_path"></g>
+                <circle class="background" cx="18" cy="18" r="16" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_e_path"></g>
+                <circle class="background" cx="18" cy="18" r="15" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_f_path"></g>
+                <circle class="background" cx="18" cy="18" r="14" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_g_path"></g>
+                <circle class="background" cx="18" cy="18" r="13" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_h_path"></g>
+                <circle class="background" cx="18" cy="18" r="12" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_i_path"></g>
+                <circle class="background" cx="18" cy="18" r="11" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_j_path"></g>
+                <circle class="background" cx="18" cy="18" r="10" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_k_path"></g>
+                <circle class="background" cx="18" cy="18" r="9" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_l_path"></g>
+                <circle class="background" cx="18" cy="18" r="8" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_m_path"></g>
+                <circle class="background" cx="18" cy="18" r="7" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_n_path"></g>
+                <circle class="background" cx="18" cy="18" r="6" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_o_path"></g>
+                <circle class="background" cx="18" cy="18" r="5" fill="none" stroke="#eef" stroke-width="1"/>
+                <g id="disk_p_path"></g>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const meterA = document.getElementById('disk_a');
+            const meterB = document.getElementById('disk_b');
+            const meterC = document.getElementById('disk_c');
+			const meterD = document.getElementById('disk_d');
+			const meterE = document.getElementById('disk_e');
+			const meterF = document.getElementById('disk_f');
+			const meterG = document.getElementById('disk_g');
+			const meterH = document.getElementById('disk_h');
+			const meterI = document.getElementById('disk_i');
+			const meterJ = document.getElementById('disk_j');
+			const meterK = document.getElementById('disk_k');
+			const meterL = document.getElementById('disk_l');
+			const meterM = document.getElementById('disk_m');
+			const meterN = document.getElementById('disk_n');
+			const meterO = document.getElementById('disk_o');
+			const meterP = document.getElementById('disk_p');
+			
+            const pathA = document.getElementById('disk_a_path');
+            const pathB = document.getElementById('disk_b_path');
+            const pathC = document.getElementById('disk_c_path');
+            const pathD = document.getElementById('disk_d_path');
+			const pathE = document.getElementById('disk_e_path');
+			const pathF = document.getElementById('disk_f_path');
+			const pathG = document.getElementById('disk_g_path');
+			const pathH = document.getElementById('disk_h_path');
+			const pathI = document.getElementById('disk_i_path');
+			const pathJ = document.getElementById('disk_j_path');
+			const pathK = document.getElementById('disk_k_path');
+			const pathL = document.getElementById('disk_l_path');
+			const pathM = document.getElementById('disk_m_path');
+			const pathN = document.getElementById('disk_n_path');
+			const pathO = document.getElementById('disk_o_path');
+			const pathP = document.getElementById('disk_p_path');
+
+            function createSquares(path, value, radius) {
+                const numSquares = Math.floor(value * 100);
+                path.innerHTML = ''; // Clear existing squares
+
+                for (let i = 0; i < numSquares; i++) {
+                    const angle = (i / 100) * 2 * Math.PI - Math.PI / 2;
+                    const x = 18 + radius * Math.cos(angle);
+                    const y = 18 + radius * Math.sin(angle);
+
+                    const square = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    square.setAttribute('x', x);
+                    square.setAttribute('y', y);
+                    square.setAttribute('width', 0.6);
+                    square.setAttribute('height', 0.6);
+                    square.setAttribute('fill', (i % 2 === 0) ? 'blue' : 'white');
+                    square.setAttribute('transform', `rotate(${angle * (180 / Math.PI)} ${x} ${y})`);
+
+                    path.appendChild(square);
+                }
+            }
+
+            function animateMeter(meter, path, radius, endValue, duration) {
+                const increment = (endValue - 0) / (duration / 10);
+                let currentValue = 0;
+
+                function step() {
+                    currentValue += increment;
+                    if (currentValue <= endValue) {
+                        meter.value = currentValue;
+                        createSquares(path, currentValue, radius);
+                        requestAnimationFrame(step);
+                    }
+                }
+                step();
+            }
+
+            animateMeter(meterA, pathA, 20, 0.10, 5000);
+            animateMeter(meterB, pathB, 19, 0.15, 5000);
+            animateMeter(meterC, pathC, 18, 0.20, 5000);
+			animateMeter(meterD, pathD, 17, 0.25, 5000);
+			animateMeter(meterE, pathE, 16, 0.30, 5000);
+			animateMeter(meterF, pathF, 15, 0.35, 5000);
+			animateMeter(meterG, pathG, 14, 0.40, 5000);
+			animateMeter(meterH, pathH, 13, 0.45, 5000);
+			animateMeter(meterI, pathI, 12, 0.50, 5000);
+			animateMeter(meterJ, pathJ, 11, 0.55, 5000);
+			animateMeter(meterK, pathK, 10, 0.60, 5000);
+			animateMeter(meterL, pathL,  9, 0.65, 5000);
+			animateMeter(meterM, pathM,  8, 0.70, 5000);
+			animateMeter(meterN, pathN,  7, 0.75, 5000);
+			animateMeter(meterO, pathO,  6, 0.80, 5000);
+			animateMeter(meterP, pathP,  5, 0.85, 5000);
+
+        });
+    </script>
+<script>
+
+</script>
+</body>
+</html>

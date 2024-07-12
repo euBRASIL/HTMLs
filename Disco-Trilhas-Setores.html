@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visualização do Disco</title>
+    <style>
+		.disk0 { position: relative; width: 475px; height: 475px; border: 1px solid black; border-radius: 50%; }
+        .disk8 { position: relative; width: 425px; height: 425px; border: 1px solid black; border-radius: 50%; }
+		.disk7 { position: relative; width: 375px; height: 375px; border: 1px solid black; border-radius: 50%; }
+		.disk6 { position: relative; width: 325px; height: 325px; border: 1px solid black; border-radius: 50%; }
+		.disk5 { position: relative; width: 275px; height: 275px; border: 1px solid black; border-radius: 50%; }
+		.disk4 { position: relative; width: 225px; height: 225px; border: 1px solid black; border-radius: 50%; }
+		.disk3 { position: relative; width: 175px; height: 175px; border: 1px solid black; border-radius: 50%; }
+		.disk2 { position: relative; width: 125px; height: 125px; border: 1px solid black; border-radius: 50%; }
+		.disk1 { position: relative; width:  75px; height:  75px; border: 1px solid black; border-radius: 50%; }
+
+        .track {
+            position: absolute;
+            border-radius: 50%;
+            width: 3%;
+            height: 3%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+        }
+
+		.sector {
+			position: absolute;
+			transform-origin: 50% 50%;
+			writing-mode: vertical-rl;
+			line-height: 32; /* Reduz o espaço entre as linhas */
+			line-through: 20;
+		}
+
+    </style>
+</head>
+<body>
+    <div>
+        <div class="track" style="width: 100%; height: 100%; top: 0%; left: 0%;" id="track0"><div class="disk0"></div></div>
+        <div class="track" style="width: 87.5%; height: 87.5%; top: 6.25%; left: 6.25%;" id="track1"><div class="disk8"></div></div>
+        <div class="track" style="width: 75%; height: 75%; top: 12.5%; left: 12.5%;" id="track2"><div class="disk7"></div></div>
+        <div class="track" style="width: 62.5%; height: 62.5%; top: 18.75%; left: 18.75%;" id="track3"><div class="disk6"></div></div>
+        <div class="track" style="width: 50%; height: 50%; top: 25%; left: 25%;" id="track4"><div class="disk5"></div></div>
+        <div class="track" style="width: 37.5%; height: 37.5%; top: 31.25%; left: 31.25%;" id="track5"><div class="disk4"></div></div>
+        <div class="track" style="width: 25%; height: 25%; top: 37.5%; left: 37.5%;" id="track6"><div class="disk3"></div></div>
+        <div class="track" style="width: 12.5%; height: 12.5%; top: 43.75%; left: 43.75%;" id="track7"><div class="disk2"></div></div>
+        <div class="track" style="width: 6.25%; height: 6.25%; top: 46.875%; left: 46.875%;" id="track8"><div class="disk1"></div></div>
+    </div>
+    <script>
+        function createSectors(trackId, numSectors, valuePerSector) {
+            const track = document.getElementById(trackId);
+            const angleIncrement = 360 / numSectors;
+            for (let i = 0; i < numSectors; i++) {
+                const sector = document.createElement('div');
+                sector.className = 'sector';
+                sector.style.transform = `rotate(${i * angleIncrement}deg) translate(47%, 0%)`;
+				// ⣿⠿⠾⠽⠼⠻⠺⠹⠸⠷⠶⠵⠴⠳⠲⠱⠰⠯⠮⠭⠬⠫⠪⠩⠨⠧⠦⠥⠤⠣⠢⠡⠠⠟⠞⠝⠜⠛⠚⠙⠘⠗⠖⠕⠔⠓⠒⠑⠐⠏⠎⠍⠌⠋⠊⠉⠈⠇⠆⠅⠄⠃⠂⠁⠀//
+				// ◔ ◴ ◵ ◶ ◷ ◕ //
+                sector.innerText = "░";
+				sector.style.width  = '16%'; /* Expandir para preencher o setor */
+				// sector.style.height = '3%'; /* Expandir para preencher o setor */
+				// sector.style.line-height: '0';
+				sector.style.position = 'absolute';
+				sector.style.sec
+                track.appendChild(sector);
+            }
+        }
+
+        // Distribuir setores para cada trilha
+        createSectors('track0', 14, 286_000_000);
+        // createSectors('track8', 36, 73_000_000_000);
+        createSectors('track7', 18, 300_000_000_000_000);
+        createSectors('track6', 36, 11_000_000_000_000_000);
+        createSectors('track5', 36, 11_000_000_000_000_000);
+        createSectors('track4', 36, 11_000_000_000_000_000);
+        createSectors('track3', 36, 11_000_000_000_000_000);
+        createSectors('track2', 36, 300_000_000_000_000);
+		createSectors('track1', 18, 4_000_000_000_000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>euBRASIL( Disco | Gravar )</title>
+    <style>
+        .disk9 { position: relative; width: 475px; height: 475px; border: 1px solid black; border-radius: 50%; background-color: #FFFF00; } /* #FFFF00 */    
+        .disk8 { position: relative; width: 425px; height: 425px; border: 1px solid black; border-radius: 50%; background-color: #0000FF; } /* #964b00 */
+        .disk7 { position: relative; width: 375px; height: 375px; border: 1px solid black; border-radius: 50%; }
+        .disk6 { position: relative; width: 325px; height: 325px; border: 1px solid black; border-radius: 50%; }
+        .disk5 { position: relative; width: 275px; height: 275px; border: 1px solid black; border-radius: 50%; }
+        .disk4 { position: relative; width: 225px; height: 225px; border: 1px solid black; border-radius: 50%; }
+        .disk3 { position: relative; width: 175px; height: 175px; border: 1px solid black; border-radius: 50%; }        
+        .disk2 { position: relative; width: 125px; height: 125px; border: 1px solid black; border-radius: 50%; }
+        .disk1 { position: relative; width:  75px; height:  75px; border: 1px solid black; border-radius: 50%; background-color: #FFFFFF; }
+
+        .track {
+            position: absolute;
+            border-radius: 50%;
+            width: 3%;
+            height: 3%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sector {
+            position: absolute;
+            transform-origin: 50% 50%;
+            writing-mode: vertical-rl;
+            cursor: pointer; /* Adiciona cursor de ponteiro para indicar interatividade */
+            line-height: 29; /* Reduz o espaço entre as linhas */
+			padding : 0;
+        }
+
+        .legend {
+            margin-top: 20px;
+        }
+
+        .legend div {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #000;
+        }
+
+        
+        
+        .hexadometro {
+			@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+            font-family: 'Orbitron', sans-serif;
+			position: absolute;
+			left: 870px;
+			top: -220px;
+			
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            /* background-color: #000; */
+            color: #0f0;
+            margin: 0;
+        }
+		#odometer {
+			font-size: 2.5em;
+			background: rgba(0, 255, 0, 0.1);
+			padding: 20px;
+			border: 1px solid #0f0;
+			border-radius: 10px;
+			box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2), 0 0 10px rgba(0, 255, 0, 0.5); /* Adiciona um efeito de sombra */
+			text-shadow: 1px 1px 2px #fff, -1px -1px 2px #000; /* Adiciona um efeito de relevo */
+		}
+
+        #universe {
+            margin-top: 20px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div>
+        <div class="track" style="width: 100%; height: 100%; top: 0%; left: 0%;"             id="track1"><div class="disk9"></div></div>
+        <div class="track" style="width: 87.5%; height: 87.5%; top: 6.25%; left: 6.25%;"     id="track2"><div class="disk8"></div></div>
+        <div class="track" style="width: 75%; height: 75%; top: 12.5%; left: 12.5%;"         id="track3"><div class="disk7"></div></div>
+        <div class="track" style="width: 62.5%; height: 62.5%; top: 18.75%; left: 18.75%;"   id="track4"><div class="disk6"></div></div>
+        <div class="track" style="width: 50%; height: 50%; top: 25%; left: 25%;"             id="track5"><div class="disk5"></div></div>
+        <div class="track" style="width: 37.5%; height: 37.5%; top: 31.25%; left: 31.25%;"   id="track6"><div class="disk4"></div></div>
+		<div class="track" style="width: 25%; height: 25%; top: 37.5%; left: 37.5%;"         id="track7"><div class="disk3"></div></div>
+        <div class="track" style="width: 12.5%; height: 12.5%; top: 43.75%; left: 43.75%;"   id="track8"><div class="disk2"></div></div>
+        <div class="track" style="width: 6.25%; height: 6.25%; top: 46.875%; left: 46.875%;" id="track9"><div class="disk1"></div></div>
+
+    </div>
+
+    <div class="legend">
+        <div><div class="color-box" style="background-color: #FFFF00;"></div>8º Trilha - *18x Setores de 1 Quinquilhão</div>
+        <div><div class="color-box" style="background-color: #0000FF;"></div>7º Trilha - 400x Setores de 45 Quatrilhões</div>
+        <div><div class="color-box" style="background-color: #0000FF;"></div>6º Trilha - 350x Setores de 26 Quatrilhões</div>
+        <div><div class="color-box" style="background-color: #0000FF;"></div>5º Trilha - 300x Setores de 13 Quatrilhões</div>
+        <div><div class="color-box" style="background-color: #0000FF;"></div>4º Trilha - 250x Setores de 300 Trilhões</div>
+        <div><div class="color-box" style="background-color: #0000FF;"></div>3º Trilha - 200x Setores de 1,2 Trilhões</div>
+        <div><div class="color-box" style="background-color: #0000FF;"></div>2º Trilha - 150x Setores de 73 Bilhões</div>
+        <div><div class="color-box" style="background-color: #0000FF;"></div>1º Trilha - 100x Setores de 10 Milhões</div>
+    </div>
+
+    <!-- button onclick="salvarTxT">Salvar em arquivo</button --> 
+	
+    <div class="hexadometro">
+        <div id="odometer">0x3000000000000000</div>
+        <div id="universe">Distância: 0 anos-luz</div>
+    </div>
+	
+	
+    <script>
+        let characterIndex = 1;
+        const sectorsData = [];
+
+        function createSectors(trackId, numSectors, valuePerSector) {
+            const track = document.getElementById(trackId);
+            const angleIncrement = 360 / numSectors;
+            for (let i = 0; i < numSectors; i++) {
+                const sector = document.createElement('div');
+                sector.className = 'sector';
+                sector.style.transform = `rotate(${i * angleIncrement}deg) translate(47%, 0%)`;
+
+                // Armazena o valor do setor com a numeração, mas não exibe
+                const numberedChar = `${valuePerSector}${characterIndex}`;
+                sectorsData.push(numberedChar);
+
+                // Exibe apenas o valor do setor sem a numeração
+                sector.innerText = valuePerSector;
+
+                sector.style.width = '15.3%';
+
+                sector.dataset.index = characterIndex; // Armazena o índice do caractere no dataset
+
+                sector.addEventListener('click', () => {
+                    const currentValue = sector.innerText;
+                    const charPosition = sector.dataset.index;
+                    const newValue = prompt("Digite o novo valor para este setor:", `${currentValue}${charPosition}`);
+                    if (newValue !== null) {
+                        sector.innerText = newValue.replace(charPosition, "");
+                    }
+                });
+                track.appendChild(sector);
+                characterIndex++;
+            }
+        }
+
+        /* function salvarTxT() {
+            const blob = new Blob([sectorsData.join('\n')], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'sectorsData.txt';
+            a.click();
+        } */
+		createSectors('track9', 18,  "│Q");
+        createSectors('track8', 400, "│"); //   45|----------|18Q ou 1Q de 2**64 = 18446744073709551616
+        createSectors('track7', 350, "│"); //   26|----------|9  Quatrilhões
+        createSectors('track6', 300, "│"); //   13|----------|4  Quatrilhões
+        createSectors('track5', 250, "│"); // 300T|----------|75 Quatrilhões
+        createSectors('track4', 200, "│"); // 1.2T|----------|300T
+        createSectors('track3', 150, "│"); //   4B|----------|73B
+        createSectors('track2', 100, "│"); //  10M|----------|286M ( byte de Pesquisa através de 8 casas hexadecimais )
+
+    </script>
+
+    <script>
+        let hexNumber = BigInt('0x3000000000000000');
+        const distancePerIncrement = 9460730472580800; // Anos-luz para metros
+        const base = BigInt('0x1000000000000000'); // 2^64
+        const incrementPerMinute = 140000;
+        const incrementPerSecond = incrementPerMinute / 60;
+        const intervalTime = 1000 / incrementPerSecond; // Intervalo de tempo em milissegundos
+
+        function updateOdometer() {
+            const odometer = document.getElementById('odometer');
+            const universe = document.getElementById('universe');
+            odometer.textContent = '0x' + hexNumber.toString(16).toUpperCase();
+            const distanceInLightYears = Number((hexNumber - base) / BigInt(distancePerIncrement));
+            universe.textContent = `Distância: ${distanceInLightYears.toLocaleString()} anos-luz`;
+        }
+
+        function incrementHex() {
+            hexNumber += BigInt(1);
+            updateOdometer();
+        }
+
+        setInterval(incrementHex, intervalTime);
+        updateOdometer();
+    </script>
+</body>
+</html>

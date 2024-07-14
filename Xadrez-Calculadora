@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Calculadora de Xadrez</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.0/math.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    #board {
+      width: 400px;
+      float: left;
+    }
+    #calculations {
+      float: left;
+      margin-left: 20px;
+    }
+    #calculations p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="board" style="width: 400px"></div>
+  <div id="calculations">
+    <input type="text" id="input" style="width: 400px"></input>
+    <button onclick="calculate()">Calcular</button>
+    <p id="output"></p>
+    <div id="calculationList"></div>
+  </div>
+  <script>
+    var pieceValues = {
+      'wK': 7,  // Rei Branco
+      'wQ': 8,  // Dama Branca
+      'wB': 6,  // Bispo Branco
+      'wN': 4,  // Cavalo Branco
+      'wR': 10, // Torre Branca
+      'wP': 1,  // Peão Branco
+      'bK': 7,  // Rei Preto
+      'bQ': 8,  // Dama Preta
+      'bB': 6,  // Bispo Preto
+      'bN': 4,  // Cavalo Preto
+      'bR': 10, // Torre Preta
+      'bP': 1   // Peão Preto
+    };
+
+    var board = Chessboard('board', {
+      draggable: true,
+      dropOffBoard: 'trash',
+      sparePieces: true,
+      onDrop: function(source, target, piece) {
+        var sourceValue = pieceValues[piece] || 0;
+        var sourceColor = piece[0];  // 'w' para branco, 'b' para preto
+        var input = document.getElementById('input').value;
+        var currentValue = input ? parseFloat(input) : 0;
+
+        if (sourceColor === 'w') {
+          // Adicionar valor das peças brancas
+          currentValue += sourceValue;
+        } else if (sourceColor === 'b') {
+          // Subtrair valor das peças pretas
+          currentValue -= sourceValue;
+        }
+
+        document.getElementById('input').value = currentValue;
+        addCalculationToList(source, target, piece, currentValue);
+      }
+    });
+
+    function calculate() {
+      var input = document.getElementById('input').value;
+      try {
+        var result = math.evaluate(input);
+        document.getElementById('output').innerHTML = result;
+      } catch (e) {
+        document.getElementById('output').innerHTML = 'Erro: ' + e.message;
+      }
+    }
+
+    function addCalculationToList(source, target, piece, result) {
+      var calculationList = document.getElementById('calculationList');
+      var newCalculation = document.createElement('p');
+      newCalculation.innerHTML = 'Peça: ' + piece + ', de: ' + source + ' para: ' + target + ' -> Resultado: ' + result;
+      calculationList.appendChild(newCalculation);
+    }
+  </script>
+</body>
+</html>

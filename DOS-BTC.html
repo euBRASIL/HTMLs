@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Operacional Bitcoin</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: monospace;
+      padding: 20px;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    #clock, #gps {
+      margin-bottom: 20px;
+    }
+    #terminal {
+      width: 75%;
+      height: 70vh;
+      border: 1px solid white;
+      padding: 10px;
+      overflow-y: auto;
+      position: relative;
+    }
+    #info {
+      width: 25%;
+      padding: 20px;
+      border-left: 1px solid white;
+      overflow-y: auto;
+    }
+    .input-line {
+      display: flex;
+      align-items: center;
+    }
+    #prompt {
+      margin-right: 5px;
+    }
+    #input {
+      width: calc(100% - 50px);
+      border: none;
+      background: none;
+      color: white;
+      outline: none;
+      font-family: monospace;
+      caret-color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="terminal">
+    <div class="input-line">
+      <span id="prompt">BTC:/></span>
+      <input type="text" id="input" autofocus>
+    </div>
+  </div>
+
+	<div id="info">
+		<h3 style="aligner:center;">iNFO Endereço BTC</h3><br>
+		<div id="btc-info"></div><br>
+		<div id="clock"></div>
+		<div id="gps"></div>
+	</div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const terminal = document.getElementById('terminal');
+      const btcInfo = document.getElementById('btc-info');
+      let currentDirectory = ''; // Estado para manter o diretório atual
+
+      function updateClock() {
+        const now = new Date();
+        const formattedTime = now.toLocaleTimeString();
+        const formattedDate = now.toLocaleDateString();
+        document.getElementById('clock').textContent = `Data: ${formattedDate} Hora: ${formattedTime}`;
+      }
+
+      function updateGPS() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            const { latitude, longitude } = position.coords;
+            document.getElementById('gps').textContent = `Latitude: ${latitude.toFixed(4)}, Longitude: ${longitude.toFixed(4)}`;
+          }, (error) => {
+            document.getElementById('gps').textContent = `Não foi possível obter a localização: ${error.message}`;
+          });
+        } else {
+          document.getElementById('gps').textContent = 'Geolocalização não suportada pelo navegador.';
+        }
+      }
+
+      setInterval(updateClock, 1000);
+      updateGPS();
+
+      const fileSystem = [
+        '13ZB1HbxXMjB4JTDFJvtBtGete4y9WH6nK',
+        '13ZB1HdinMBYwft3m94Rqrwq6VfjULv2Eq',
+        '13ZB1H7FfyF6AeUKEK9tBCqXecQLyHKS1q',
+        '13ZB1HbD1eLUXGPaKnBeTnYHZ93Y5TtKWB',
+        '13ZB1HFJkRWyBKD6HRAqj8682D2PESgDwe',
+        '13ZB1HXnS733j2LKjxYrwAmdLFdwESHZRw',
+        '13ZB1H3zoT2BEVzNrvtiku4p17sjASR32J',
+        '13ZB1HY6r9t5XxuB2GS2RYXiYsCsz1wz4u',
+        '13ZB1HgY56Svw1RF5zDwkdBxqLfHXYLiHF',
+      ];
+
+      function processCommand(command) {
+        const inputLine = document.createElement('div');
+        inputLine.className = 'input-line';
+        inputLine.innerHTML = `<span>${getPrompt()}</span><span>${command}</span>`;
+        terminal.insertBefore(inputLine, terminal.lastElementChild);
+
+        const args = command.split(' ');
+        const cmd = args[0].toLowerCase();
+
+        switch (cmd) {
+          case 'dir':
+            displayDir();
+            break;
+          case 'cls':
+            terminal.innerHTML = '';
+            break;
+          case 'sistema':
+            testAll();
+            break;
+          case 'getblock':
+            displayGetBlock(args[1]);
+            break;
+          case 'btcsaldo':
+            btcsaldo(args[1]);
+            break;
+          case 'cd':
+            changeDirectory(args[1]);
+            break;
+          default:
+            terminal.innerHTML += `<div>Comando '${cmd}' não reconhecido</div>`;
+        }
+
+        createNewInputLine();
+      }
+
+      function displayDir() {
+        fileSystem.forEach(file => {
+          terminal.innerHTML += `<div>${file}</div>`;
+        });
+      }
+
+      function btcsaldo(address) {
+        if (!address) {
+          terminal.innerHTML += `<div>Uso: btcsaldo [endereço]</div>`;
+        } else {
+          // Exibe informações simuladas para o endereço BTC
+          const saldo = (Math.random() * 5).toFixed(8); // Saldo aleatório simulado
+          terminal.innerHTML += `<div>Saldo do endereço ${address}: ${saldo} BTC (simulado)</div>`;
+          displayBtcInfo(address, saldo);
+        }
+      }
+
+      function displayBtcInfo(address, saldo) {
+        btcInfo.innerHTML += `<div><strong>${address}</strong><br>Saldo: ${saldo} BTC</div>`;
+      }
+
+      function changeDirectory(address) {
+        if (fileSystem.includes(address)) {
+          currentDirectory = address;
+          terminal.innerHTML += `<div>Endereço de Bitcoin: ${address}</div>`;
+          // Opcional: exibir saldo ou outras informações do endereço
+          btcsaldo(address);
+        } else {
+          terminal.innerHTML += `<div>Endereço '${address}' não encontrado</div>`;
+        }
+      }
+
+      function getPrompt() {
+        return currentDirectory ? `BTC:/${currentDirectory}/>` : `BTC:/>`;
+      }
+
+      function createNewInputLine() {
+        const newInputLine = document.createElement('div');
+        newInputLine.className = 'input-line';
+        newInputLine.innerHTML = `<span>${getPrompt()}</span>`;
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.id = 'input';
+        newInput.autofocus = true;
+        newInput.style.width = 'calc(100% - 50px)';
+        newInput.style.border = 'none';
+        newInput.style.background = 'none';
+        newInput.style.color = 'white';
+        newInput.style.outline = 'none';
+        newInput.style.fontFamily = 'monospace';
+        newInput.style.caretColor = 'white';
+        newInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            const command = newInput.value.trim();
+            processCommand(command);
+            newInput.value = '';
+            terminal.scrollTop = terminal.scrollHeight;
+          }
+        });
+        newInputLine.appendChild(newInput);
+        terminal.appendChild(newInputLine);
+        newInput.focus();
+      }
+
+      createNewInputLine();
+    });
+  </script>
+</body>
+</html>

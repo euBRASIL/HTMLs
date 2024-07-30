@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Operacional Bitcoin</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: monospace;
+      padding: 20px;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    #clock, #gps {
+      margin-bottom: 20px;
+    }
+    #terminal {
+      width: 75%;
+      height: 70vh;
+      border: 1px solid white;
+      padding: 10px;
+      overflow-y: auto;
+      position: relative;
+    }
+    #info {
+      width: 25%;
+      padding: 20px;
+      border-left: 1px solid white;
+      overflow-y: auto;
+    }
+    .input-line {
+      display: flex;
+      align-items: center;
+    }
+    #prompt {
+      margin-right: 5px;
+    }
+    #input {
+      width: calc(100% - 50px);
+      border: none;
+      background: none;
+      color: white;
+      outline: none;
+      font-family: monospace;
+      caret-color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="terminal">
+    <div class="input-line">
+      <span id="prompt">BTC:/></span>
+      <input type="text" id="input" autofocus>
+    </div>
+  </div>
+
+	<div id="info">
+		<h3 style="aligner:center;">iNFO Endereço BTC</h3><br>
+		<div id="btc-info"></div>
+		<div id="clock"></div>
+		<div id="btc-price"></div>
+		<div id="gps"></div>
+		
+		Comandos: <br><br>
+
+			cls : limpa a tela <br>
+			dir : lista os endereços de Bitcoin <br>
+			cd  / retorna para a raiz BTC:/> <br>
+			cd  "endereço de bitcoin" : <br>acessa a iNFO das etapas de mineração <br>
+	</div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const terminal = document.getElementById('terminal');
+      const btcInfo = document.getElementById('btc-info');
+      let currentDirectory = ''; // Estado para manter o diretório atual
+
+		// ------------------------------------------------------------------------------------ URL da API
+			const apiUrl = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=BRL";
+		// ------------------------------------------------------------------------------------
+		function fetchBTCPrice() {
+			fetch(apiUrl)
+				.then(response => response.json())
+				.then(data => {
+					const btcPrice = data.BRL;
+					// Exibir o preço acima da data
+					displayBTCPrice(btcPrice);
+				})
+				.catch(error => console.error('Erro ao buscar o preço do BTC:', error));
+		}
+		// ------------------------------------------------------------------------------------
+		function displayBTCPrice(price) {
+			const btcPriceElement = document.getElementById('btc-price');
+			btcPriceElement.textContent = `BTC em BRL: R$ ${price}`;
+		}
+		// ------------------------------------------------------------------------------------
+
+
+
+
+
+
+      function updateClock() {
+        const now = new Date();
+        const formattedTime = now.toLocaleTimeString();
+        const formattedDate = now.toLocaleDateString();
+        document.getElementById('clock').textContent = `Data: ${formattedDate} Hora: ${formattedTime}`;
+      }
+
+      function updateGPS() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            const { latitude, longitude } = position.coords;
+            document.getElementById('gps').textContent = `Latitude: ${latitude.toFixed(4)}, Longitude: ${longitude.toFixed(4)}`;
+          }, (error) => {
+            document.getElementById('gps').textContent = `Não foi possível obter a localização: ${error.message}`;
+          });
+        } else {
+          document.getElementById('gps').textContent = 'Geolocalização não suportada pelo navegador.';
+        }
+      }
+
+      setInterval(updateClock, 1000);
+      updateGPS();
+
+      const fileSystem = [
+			'13ZB1HbxXMjB4JTDFJvtBtGete4y9WH6nK',
+			'13ZB1HdinMBYwft3m94Rqrwq6VfjULv2Eq',
+			'13ZB1H7FfyF6AeUKEK9tBCqXecQLyHKS1q',
+			'13ZB1HbD1eLUXGPaKnBeTnYHZ93Y5TtKWB',
+			'13ZB1HFJkRWyBKD6HRAqj8682D2PESgDwe',
+			'13ZB1HXnS733j2LKjxYrwAmdLFdwESHZRw',
+			'13ZB1H3zoT2BEVzNrvtiku4p17sjASR32J',
+			'13ZB1HY6r9t5XxuB2GS2RYXiYsCsz1wz4u',
+			'13ZB1HgY56Svw1RF5zDwkdBxqLfHXYLiHF',
+			'13ZB1HQdGnA13kEHJdgfCrqn5GotSEqXRq',
+			'13ZB1H16GrgSiTYDwmQUGLZZvk2bExnZhc',
+			'13ZB1HK8yfLeNea8YQs8eKwpX1M7TpZBpp',
+      ];
+
+      function processCommand(command) {
+        const inputLine = document.createElement('div');
+        inputLine.className = 'input-line';
+        inputLine.innerHTML = `<span>${getPrompt()}</span><span>${command}</span>`;
+        terminal.insertBefore(inputLine, terminal.lastElementChild);
+
+        const args = command.split(' ');
+        const cmd = args[0].toLowerCase();
+
+        switch (cmd) {
+          case 'dir':
+            displayDir();
+            break;
+          case 'cls':
+            terminal.innerHTML = '';
+            break;
+          case 'sistema':
+            testAll();
+            break;
+          case 'getblock':
+            displayGetBlock(args[1]);
+            break;
+          case 'btcsaldo':
+            btcsaldo(args[1]);
+            break;
+          case 'cd':
+            changeDirectory(args[1]);
+            break;
+			
+          default:
+            terminal.innerHTML += `<div>Comando '${cmd}' não reconhecido</div>`;
+        }
+
+        createNewInputLine();
+      }
+
+      function displayDir() {
+        fileSystem.forEach(file => {
+          terminal.innerHTML += `<div>${file}</div>`;
+        });
+      }
+
+      function btcsaldo(address) {
+        if (!address) { terminal.innerHTML += `<div>Uso: btcsaldo [endereço]</div>`; } 
+		else { 
+		// CD {address bitcoin} : Apresentar todos os dados sobre este endereço de Bitcoin na tela "iNFO"
+
+          const saldo = (Math.random() * 5).toFixed(8); // Saldo aleatório simulado
+          terminal.innerHTML += `<div>Saldo do endereço ${address}: ${saldo} BTC (simulado)</div><br>`;
+          // displayBtcInfo(address, saldo);
+		  subDiretorio(address);
+        }
+      }
+
+      function displayBtcInfo(address, saldo) {
+        btcInfo.innerHTML += `<div><strong>${address}</strong><br>Saldo: ${saldo} BTC</div><br>`;
+      }
+	  
+//  -----------------------------------------------------------------	  
+		function subDiretorio(address) {
+			if ( address === '13ZB1HbxXMjB4JTDFJvtBtGete4y9WH6nK' ) { terminal.innerHTML += `<div>SHA-256(1)		: 95f6a614dcd8fd388878edf807e14488073024c376b654e6160fa0ea6d0544fb</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9feceaeee87c47e4fe7d304bf3bbc1d163f</div>`; terminal.innerHTML += `<div>SHA-256(2)		: aaa9f8be2532c69590d7186d7d00ed115adb561003141759c8a9014a098ec8fe</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 6d63e2c8af84cf6c696548e7cba573d17673c2df764e251129b9c3015d978074</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	6d63e2c8</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HbxXMjB4JTDFJvtBtGete4y9WH6nK</div><br>`; }
+			if ( address === '13ZB1HdinMBYwft3m94Rqrwq6VfjULv2Eq' ) { terminal.innerHTML += `<div>SHA-256(1)		: d52294b43573604090e507efbb0f1b748e6788aabbb54235c2f1b7eb848c8cce</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9ff4d3c25f93ebefc244153fccff42c724f</div>`; terminal.innerHTML += `<div>SHA-256(2)		: aee75de6279ccb6055eb0a25e7c8c1f8c4d57f0f150820fb80c4db2cbaf35950</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 6117ae1ec87a911b367215aab48435b13001c887447b003949bd15be8955bf65</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	6117ae1e</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HdinMBYwft3m94Rqrwq6VfjULv2Eq</div><br>`; }
+			if ( address === '13ZB1H7FfyF6AeUKEK9tBCqXecQLyHKS1q' ) { terminal.innerHTML += `<div>SHA-256(1)		: 058190661e0e51015e68ece5dd4b3f655fcad85c2501e5a883d70ca3b2eac472</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9f6c251b1edb7d87b84ee92dfc322edee26</div>`; terminal.innerHTML += `<div>SHA-256(2)		: a17ef71397673c2c7b6247f7b56b08f8350ee36e3035409503724b9155a563fb</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 6c64a0c419cc98febbdbff8670734ade9b430e9813328c797e05aa68fb5eee82</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	6c64a0c4</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1H7FfyF6AeUKEK9tBCqXecQLyHKS1q</div><br>`; }
+			if ( address === '13ZB1HbD1eLUXGPaKnBeTnYHZ93Y5TtKWB' ) { terminal.innerHTML += `<div>SHA-256(1)		: 4576a43d5580eedb62ee59ac1527a30ce64929ed675f897cdb4410ee6e63f1ab</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9fe98d57ea5d80d12f059990b22e2ecbef2</div>`; terminal.innerHTML += `<div>SHA-256(2)		: b4fc99c31227247f0d62777b34a53dfff75bd7fd853b356d48fd04f95b5f80bf</div>`; terminal.innerHTML += `<div>SHA-256(3)		: e110d9fce0d4f98fc46ff43d280f253848f491005cfeca198c2996245d8ae78a</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	e110d9fc</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HbD1eLUXGPaKnBeTnYHZ93Y5TtKWB</div><br>`; }
+			if ( address === '13ZB1HFJkRWyBKD6HRAqj8682D2PESgDwe' ) { terminal.innerHTML += `<div>SHA-256(1)		: f8cd9322f0020d82faf59f894a26ccb6cae5a531794592d027f2196c954119f7</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9f9045b8d0fef01129d86b7802787116fa8</div>`; terminal.innerHTML += `<div>SHA-256(2)		: 5d35ba4f7897e74972554d59fe23302bc7ca8eb68f9aa4eef09bf6b350405d69</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 2b00d3d95da6cf877be44b815e56cf34103c491adab3799f63d4ad6ff2205630</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	2b00d3d9</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HFJkRWyBKD6HRAqj8682D2PESgDwe</div><br>`; }
+			if ( address === '13ZB1HXnS733j2LKjxYrwAmdLFdwESHZRw' ) { terminal.innerHTML += `<div>SHA-256(1)		: 41ef89b6ad53a93319cc1c568cc32885c8c67d7b1680c6602f5ad547f295ff96</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9fda314869ed774989cb0de80210f7dd44c</div>`; terminal.innerHTML += `<div>SHA-256(2)		: ccca9dc413816f55b14a87698212d5c60d39a2e423b64f934e308cb1fac3c09f</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 44a5d3d6790f1dcb189d1e580361c4f25327c84a997e9a13fdee95a3d7cd3a98</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	44a5d3d6</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HXnS733j2LKjxYrwAmdLFdwESHZRw</div><br>`; }
+			if ( address === '13ZB1H3zoT2BEVzNrvtiku4p17sjASR32J' ) { terminal.innerHTML += `<div>SHA-256(1)		: 60faf9836764d7b6c4807d09211c6625630869d580265d2d4ad6f1ce2e9a0bca</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9f5d894232bdf4e8dec26242845e08b37d0</div>`; terminal.innerHTML += `<div>SHA-256(2)		: 9e421c17f3fd27068acca20e165e08464f8b508f864b921fdd2f29a90a03d0d5</div>`; terminal.innerHTML += `<div>SHA-256(3)		: cadd2503db3f106452c52f2aaed14f74d0d733a7ede69417459ad90503facfdc</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	cadd2503</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1H3zoT2BEVzNrvtiku4p17sjASR32J</div><br>`; }
+			if ( address === '13ZB1HY6r9t5XxuB2GS2RYXiYsCsz1wz4u' ) { terminal.innerHTML += `<div>SHA-256(1)		: f13e62893e8893c70e065ed526c7dc59dec261615ef894c974704db81273152c</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9fdb9de98a3f971dfdc44007e685d2959a3</div>`; terminal.innerHTML += `<div>SHA-256(2)		: 37c47ab3e5e253725a7f790f1d1dd90f5fd4bed55b94d9b64c4c790280fad04c</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 06bb4af6d671fd4e4db32162cd7b4784b2d62e1cf8d23f5b3218a7a5f60ae9bd</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	06bb4af6</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HY6r9t5XxuB2GS2RYXiYsCsz1wz4u</div><br>`; }
+			if ( address === '13ZB1HgY56Svw1RF5zDwkdBxqLfHXYLiHF' ) { terminal.innerHTML += `<div>SHA-256(1)		: 87ed80e5b25feeb5ca1138b189d3e144aa9e8bdbbb8e9b5382b8f620dc4bfa02</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05ea001750ca146ccbf1c88b9bc416e257aefb</div>`; terminal.innerHTML += `<div>SHA-256(2)		: 3ec29d0d20455bef08b769d97b6973a0001d7519c5840a092eb03bc422a3669e</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 3460df1abcb1bac46031161b9cd4e5e540008952998e07fbabe7027181d1c989</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	3460df1a</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HgY56Svw1RF5zDwkdBxqLfHXYLiHF</div><br>`; }
+			if ( address === '13ZB1HQdGnA13kEHJdgfCrqn5GotSEqXRq' ) { terminal.innerHTML += `<div>SHA-256(1)		: b39843c99908b97125e31b6d5db36060997151b15ba1da8db5c57a8960a25937</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9fba14a89a18b9b8ce88270e2296d47fcce</div>`; terminal.innerHTML += `<div>SHA-256(2)		: 2229cde7b8cbe222c0aed9f012a1cdb8c7ec07ac3ffa89ab990737cd2969b50b</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 32a75a8894532be9e144128e50f8520ccac08c255a2b1181a10d396bc3d4bb1b</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	32a75a88</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HQdGnA13kEHJdgfCrqn5GotSEqXRq</div><br>`; }
+			if ( address === '13ZB1H16GrgSiTYDwmQUGLZZvk2bExnZhc' ) { terminal.innerHTML += `<div>SHA-256(1)		: 52de2a19425617fcfc9bb7f199b0d313680d52ccc2bef837abd16aeb95a829a8</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9f50803c765a6ad9754579ee430ef118662</div>`; terminal.innerHTML += `<div>SHA-256(2)		: fa5cf530f293832e02380dd2090b0d747fae2623285c98b473d61ba5fdb875e4</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 334cea4b32aaca3b6e1ab36cac6291cff6a6738a8243f6f3acd9ef17623de0a0</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	334cea4b</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1H16GrgSiTYDwmQUGLZZvk2bExnZhc</div><br>`; }
+			if ( address === '13ZB1HK8yfLeNea8YQs8eKwpX1M7TpZBpp' ) { terminal.innerHTML += `<div>SHA-256(1)		: 3be6504b45d329fae6da101135b4ae947c783370e2bf3483152a3eab00a58ff1</div>`; terminal.innerHTML += `<div>RIPEMD-160	: 1c05e9fa17613bf3f9482a8f13aaca500f4a1479</div>`; terminal.innerHTML += `<div>SHA-256(2)		: a049373e52ef7a0c49075472c155579972669d1eb25c90197f30fea591ace9d2</div>`; terminal.innerHTML += `<div>SHA-256(3)		: 23ea1aed5c95d7f4d17f747743d6838ed61da30a3cec24b84bc17b105d080756</div>`; terminal.innerHTML += `<div>Checksum	&nbsp;&nbsp;:	23ea1aed</div>`; terminal.innerHTML += `<div>Base58	&nbsp;	&nbsp;	:	13ZB1HK8yfLeNea8YQs8eKwpX1M7TpZBpp</div><br>`; }
+			
+		}
+//  ----------------------------------------------------------------
+
+	
+	  
+//  Sistema de Diretórios( changeDirectory, getPrompt, createNewInputLine )
+//  -------------------------------------------------------------------------------------------------------------------------------------------------------
+	function changeDirectory(address) {
+	  if (address === '/') {
+		currentDirectory = ''; // Retorna para a raiz
+		terminal.innerHTML += `<div>euBRASIL( Blockchain ao contrário )<br>Sistema BTC em JavaScript</div><br>`;
+		
+	  } else if (fileSystem.includes(address)) {
+	  
+		currentDirectory = address;
+		terminal.innerHTML += `<div>Distância Decimal: 36893488147419103232 |----------| 73786976294838206464 </div>`; // ${address}
+		btcsaldo(address); // Opcional: exibir saldo ou outras informações do endereço
+		
+	  } else {
+		terminal.innerHTML += `<div>Endereço '${address}' não encontrado</div>`;
+	  }
+	}
+
+
+      function getPrompt() {
+        return currentDirectory ? `BTC:/${currentDirectory}/>` : `BTC:/>`;
+      }
+
+      function createNewInputLine() {
+        const newInputLine = document.createElement('div');
+        newInputLine.className = 'input-line';
+        newInputLine.innerHTML = `<span>${getPrompt()}</span>`;
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.id = 'input';
+        newInput.autofocus = true;
+        newInput.style.width = 'calc(100% - 50px)';
+        newInput.style.border = 'none';
+        newInput.style.background = 'none';
+        newInput.style.color = 'white';
+        newInput.style.outline = 'none';
+        newInput.style.fontFamily = 'monospace';
+        newInput.style.caretColor = 'white';
+        newInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            const command = newInput.value.trim();
+            processCommand(command);
+            newInput.value = '';
+            terminal.scrollTop = terminal.scrollHeight;
+          }
+        });
+        newInputLine.appendChild(newInput);
+        terminal.appendChild(newInputLine);
+        newInput.focus();
+      }
+//  -------------------------------------------------------------------------------------------------------------------------------------------------------
+
+      createNewInputLine();
+	  fetchBTCPrice();
+    });
+  </script>
+</body>
+</html>

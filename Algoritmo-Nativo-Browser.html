@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECDSA and SHA-256 Example</title>
+</head>
+<body>
+    <h2>Resultado da Geração de Chaves ECDSA e Hash SHA-256</h2>
+    <div>
+        <p><strong>Chave Privada (Hex):</strong> <span id="privateKey"></span></p>
+        <p><strong>Chave Pública (Hex):</strong> <span id="publicKey"></span></p>
+        <p><strong>Hash SHA-256 da Chave Pública (Hex):</strong> <span id="publicKeyHash"></span></p>
+    </div>
+    <p id="error" style="color: red;"></p>
+
+    <script>
+        // Função para converter um ArrayBuffer em uma string hexadecimal
+        function bufferToHex(buffer) {
+            return [...new Uint8Array(buffer)]
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        // Verifica se a API crypto.subtle está disponível
+        if (window.crypto && window.crypto.subtle) {
+
+            // Função para gerar um par de chaves ECDSA
+            async function generateECDSAKeyPair() {
+                const keyPair = await crypto.subtle.generateKey(
+                    {
+                        name: "ECDSA",
+                        namedCurve: "P-256", // Curva elíptica
+                    },
+                    true, // Se as chaves são exportáveis
+                    ["sign", "verify"] // Pode ser usada para assinar e verificar
+                );
+
+                // Exportar a chave pública para formato "raw"
+                const publicKey = await crypto.subtle.exportKey(
+                    "raw", // Formato não criptografado
+                    keyPair.publicKey
+                );
+
+                // Exportar a chave privada para formato "pkcs8"
+                const privateKey = await crypto.subtle.exportKey(
+                    "pkcs8", // Formato PKCS #8 para chaves privadas
+                    keyPair.privateKey
+                );
+
+                return {
+                    publicKey,
+                    privateKey
+                };
+            }
+
+            // Função para calcular o hash SHA-256 de uma chave pública
+            async function hashPublicKey(publicKey) {
+                const hash = await crypto.subtle.digest(
+                    "SHA-256",
+                    publicKey // Chave pública em formato binário
+                );
+
+                return hash;
+            }
+
+            // Executar as funções
+            generateECDSAKeyPair().then(async (keys) => {
+                const privateKeyHex = bufferToHex(keys.privateKey);
+                const publicKeyHex = bufferToHex(keys.publicKey);
+
+                document.getElementById("privateKey").textContent = privateKeyHex;
+                document.getElementById("publicKey").textContent = publicKeyHex;
+
+                // Calcular o hash SHA-256 da chave pública
+                const publicKeyHash = await hashPublicKey(keys.publicKey);
+                document.getElementById("publicKeyHash").textContent = bufferToHex(publicKeyHash);
+            }).catch(console.error);
+
+        } else {
+            // Se a API não estiver disponível, exibir mensagem de erro
+            document.getElementById("error").textContent = "API crypto.subtle não está disponível neste navegador.";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECDSA and SHA-256 with Libraries</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <h2>Resultado da Geração de Chaves ECDSA e Hash SHA-256</h2>
+    <div>
+        <p><strong>Chave Privada (Hex):</strong> <span id="privateKey"></span></p>
+        <p><strong>Chave Pública (Hex):</strong> <span id="publicKey"></span></p>
+        <p><strong>Hash SHA-256 da Chave Pública (Hex):</strong> <span id="publicKeyHash"></span></p>
+    </div>
+
+    <script>
+        // Inicializar a curva elíptica
+        const EC = new elliptic.ec('p256');
+        
+        // Gerar o par de chaves ECDSA
+        const keyPair = EC.genKeyPair();
+        
+        // Obter a chave privada e pública em hexadecimal
+        const privateKeyHex = keyPair.getPrivate('hex');
+        const publicKeyHex = keyPair.getPublic('hex');
+
+        // Calcular o hash SHA-256 da chave pública
+        const publicKeyHash = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(publicKeyHex)).toString(CryptoJS.enc.Hex);
+
+        // Exibir as chaves na página
+        document.getElementById("privateKey").textContent = privateKeyHex;
+        document.getElementById("publicKey").textContent = publicKeyHex;
+        document.getElementById("publicKeyHash").textContent = publicKeyHash;
+    </script>
+</body>
+</html>

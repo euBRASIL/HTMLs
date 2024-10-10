@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>euBRASIL( BOTSigmoide )</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        #chat-container {
+            width: 500px;
+            margin: 50px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        #input-area {
+            display: flex;
+        }
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #send-btn {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="messages"></div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Digite sua mensagem">
+        <button id="send-btn">Enviar</button>
+    </div>
+</div>
+
+<script>
+    // Dicionário de perguntas e respostas
+    const dictionary = {
+        'oi': 'Olá! Como posso ajudar você hoje?',
+        'quem é você': 'Eu sou o ChatGPT Mini, seu assistente virtual!',
+        'qual seu nome': 'Meu nome é ChatGPT Mini.',
+        'adeus': 'Até logo! Volte sempre.',
+		'python':'Você quer apreender Python.'
+    };
+
+    // Mapeamento de letras para valores
+    const letterValues = {
+        'b': 1, 'c': 2, 'd': 3, 'f': 4, 'g': 5, 'h': 6, 'j': 7, 'k': 8, 'l': 9, 'm': 10,
+        'n': 11, 'p': 12, 'q': 13, 'r': 14, 's': 15, 't': 16, 'w': 17, 'y': 18, 'x': 19, 'z': 20,
+        'a': 0.1, 'e': 0.2, 'i': 0.3, 'o': 0.4, 'u': 0.5
+    };
+
+    // Função para calcular o valor de uma palavra com base em suas letras
+    function calculateWordValue(word) {
+        let totalValue = 0;
+        
+        for (let i = 0; i < word.length; i++) {
+            let letter = word[i].toLowerCase(); // Converte para minúsculo
+            let letterValue = letterValues[letter] || 0; // Valor da letra, ou 0 se não encontrado
+            totalValue += letterValue;
+        }
+        
+        return totalValue;
+    }
+
+    // Função para buscar a resposta do bot com base no valor gerado pelas palavras
+    function getBotResponse(input) {
+        const normalizedInput = input.toLowerCase().trim(); // Normaliza a entrada do usuário
+        const inputWordValue = calculateWordValue(normalizedInput); // Calcula o valor da palavra do usuário
+        
+        let bestMatch = null;
+        let closestValueDifference = Infinity;
+
+        // Verifica o valor de cada chave no dicionário e compara com o valor de entrada
+        for (let question in dictionary) {
+            const questionWordValue = calculateWordValue(question);
+            const valueDifference = Math.abs(inputWordValue - questionWordValue);
+
+            if (valueDifference < closestValueDifference) {
+                closestValueDifference = valueDifference;
+                bestMatch = dictionary[question];
+            }
+        }
+
+        return bestMatch || "Desculpe, não tenho uma resposta para isso. Pode tentar outra pergunta?";
+    }
+
+    // Função para adicionar uma nova mensagem no chat
+    function addMessage(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+        document.getElementById('messages').appendChild(messageElement);
+    }
+
+    // Função para processar a entrada do usuário
+    function processUserInput() {
+        const userInput = document.getElementById('user-input').value;
+        if (userInput.trim() !== "") {
+            addMessage('Você', userInput);
+            const botResponse = getBotResponse(userInput);
+            addMessage('Bot', botResponse);
+            document.getElementById('user-input').value = ""; // Limpa o campo de entrada
+        }
+    }
+
+    // Evento de clique no botão enviar
+    document.getElementById('send-btn').addEventListener('click', processUserInput);
+
+    // Evento de pressionar Enter
+    document.getElementById('user-input').addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            processUserInput();
+        }
+    });
+</script>
+
+</body>
+</html>

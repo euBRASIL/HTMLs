@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Árvore de Decisão para Endereço de Bitcoin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+        #progress-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #progress-bar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            transition: width 0.4s ease;
+        }
+        .question {
+            margin-bottom: 15px;
+        }
+        #results {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            white-space: pre; /* Mantém a formatação */
+        }
+        .completed {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .not-completed {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    <div id="questions"></div>
+    <button id="submit" disabled>Enviar</button>
+
+    <div id="results"></div> <!-- Área para mostrar os resultados -->
+
+    <script>
+        const questions = [
+            { text: "Você tem um nome de token?", points: 1 },
+            { text: "Você tem um símbolo de token?", points: 1 },
+            { text: "Você possui um contrato inteligente?", points: 1 },
+            { text: "Você tem uma plataforma definida?", points: 1 },
+            { text: "Você possui uma descrição do projeto?", points: 1 },
+            { text: "Você tem um website oficial?", points: 1 },
+            { text: "Você possui um whitepaper?", points: 1 },
+            { text: "Você tem perfis de redes sociais?", points: 1 },
+            { text: "Você possui um repositório GitHub?", points: 1 },
+            // Adicione mais perguntas conforme necessário, até atingir 72
+        ];
+
+        let score = 0;
+        let resultsOutput = [];
+        let currentQuestionIndex = 0;
+        let totalQuestions = questions.length;
+
+        function loadQuestion(index) {
+            if (index >= totalQuestions) {
+                document.getElementById('submit').disabled = false;
+                return;
+            }
+
+            const question = questions[index];
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('question');
+            questionDiv.innerHTML = `
+                <label>${question.text}</label>
+                <button class="yes" data-points="${question.points}">Sim</button>
+                <button class="no">Não</button>
+            `;
+            document.getElementById('questions').appendChild(questionDiv);
+
+            questionDiv.querySelector('.yes').addEventListener('click', () => {
+                score += question.points;
+                resultsOutput.push(`${'    '.repeat(currentQuestionIndex)}if (tokenName) { // ${question.text} - Sim`);
+                currentQuestionIndex++;
+                questionDiv.classList.add('completed');
+                loadQuestion(currentQuestionIndex);
+                updateProgress();
+            });
+
+            questionDiv.querySelector('.no').addEventListener('click', () => {
+                resultsOutput.push(`${'    '.repeat(currentQuestionIndex)}else { // ${question.text} - Não`);
+                currentQuestionIndex++;
+                questionDiv.classList.add('not-completed');
+                loadQuestion(currentQuestionIndex);
+                updateProgress();
+            });
+        }
+
+        function updateProgress() {
+            const progressPercentage = (currentQuestionIndex / totalQuestions) * 100;
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = progressPercentage + '%';
+            progressBar.textContent = `${currentQuestionIndex} de ${totalQuestions} perguntas respondidas`;
+
+            // Atualiza os resultados na área inferior
+            document.getElementById('results').innerText = resultsOutput.join('\n');
+        }
+
+        document.getElementById('submit').addEventListener('click', () => {
+            alert(`Total de pontos: ${score} de ${totalQuestions}`);
+        });
+
+        loadQuestion(currentQuestionIndex);
+    </script>
+</body>
+</html>

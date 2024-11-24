@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafios Criptográficos</title>
+
+    <style>
+        /* CSS Colorido e Moderno */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1d2671, #c33764);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            cursor: pointer;
+            background-color: transparent;
+            border: none;
+            color: #eee;
+            text-transform: uppercase;
+            transition: 0.4s;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .tab-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .tab-button.active {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            resize: none;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            background-color: #e74c3c;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        a {
+            color: #1abc9c;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #16a085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tutorial: 160 Desafios Criptográficos</h1>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'intro')">Introdução</button>
+            <button class="tab-button" onclick="openTab(event, 'desafio1')">Desafio 1</button>
+            <button class="tab-button" onclick="openTab(event, 'desafio2')">Desafio 2</button>
+            <button class="tab-button" onclick="openTab(event, 'github')">GitHub</button>
+        </div>
+
+        <div id="intro" class="tab-content active">
+            <h2>Bem-vindo aos Desafios Criptográficos</h2>
+            <p>Explore 160 desafios interativos e aprenda técnicas criptográficas avançadas.</p>
+        </div>
+
+        <div id="desafio1" class="tab-content">
+            <h2>Desafio 1: Cifra de César</h2>
+            <textarea id="code1">
+// Exemplo de código: Cifra de César
+function cifraCesar(texto, deslocamento) {
+    return texto.split('').map(char => 
+        String.fromCharCode(char.charCodeAt(0) + deslocamento)
+    ).join('');
+}
+console.log(cifraCesar("abc", 3)); // Resultado: def
+            </textarea>
+            <button onclick="downloadCode('code1', 'desafio1.js')">Download Código</button>
+        </div>
+
+        <div id="desafio2" class="tab-content">
+            <h2>Desafio 2: Hash SHA-256</h2>
+            <textarea id="code2">
+// Exemplo: Geração de Hash SHA-256
+async function gerarHash(texto) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(texto);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+gerarHash("exemplo").then(console.log);
+            </textarea>
+            <button onclick="downloadCode('code2', 'desafio2.js')">Download Código</button>
+        </div>
+
+        <div id="github" class="tab-content">
+            <h2>Acesse o Repositório no GitHub</h2>
+            <a href="https://github.com/seu-repositorio" target="_blank">Clique aqui para acessar o repositório</a>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function downloadCode(textareaId, filename) {
+            const code = document.getElementById(textareaId).value;
+            const blob = new Blob([code], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

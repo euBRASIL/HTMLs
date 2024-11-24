@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relógio Hexadecimal</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            flex-direction: column;
+        }
+        .clock {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .center-point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+        .hand {
+            position: absolute;
+            width: 1px;
+            height: 40%;
+            background-color: #00ccff;
+            transform-origin: bottom;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+        }
+        #minuteHand {
+            background-color: #ffcc00;
+            height: 45%;
+            top: 5%;
+        }
+        .hex-output {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            text-align: center;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock">
+        <div class="center-point"></div>
+        <div class="hand" id="hourHand"></div>
+        <div class="hand" id="minuteHand"></div>
+        <div class="hand" id="secondHand"></div>
+    </div>
+    <div class="hex-output" id="hexOutput">Chave privada: <span id="privateKey"></span></div>
+
+    <script>
+        // Função para gerar uma chave privada inicial de 64 dígitos hexadecimais
+        function gerarChaveInicial() {
+            let chave = '';
+            const hexChars = '0123456789ABCDEF';
+            for (let i = 0; i < 64; i++) {
+                chave += hexChars[Math.floor(Math.random() * 16)];
+            }
+            return chave;
+        }
+
+        // Função para atualizar a chave privada de acordo com "hora", "minuto" e "segundo"
+        function gerarNovaChave(chave, hora, minuto, segundo) {
+            const hexChars = '0123456789ABCDEF';
+            let novaChave = chave.split('');  // Converte a chave em um array para manipulação
+            novaChave[hora] = hexChars[hora];   // Altera um dígito com base na hora
+            novaChave[minuto] = hexChars[minuto % 16]; // Altera um dígito com base no minuto
+            novaChave[segundo] = hexChars[segundo % 16]; // Altera um dígito com base no segundo
+            return novaChave.join('');
+        }
+
+        // Inicializa a chave privada aleatória
+        let chavePrivada = gerarChaveInicial();
+
+        function atualizarRelogio() {
+            const now = new Date();
+            const hora = now.getHours() % 16; // Horas de 0 a 15
+            const minuto = now.getMinutes() % 64; // Minutos de 0 a 63
+            const segundo = now.getSeconds(); // Segundos de 0 a 59
+
+            // Atualiza a chave privada
+            chavePrivada = gerarNovaChave(chavePrivada, hora, minuto, segundo);
+            document.getElementById("privateKey").textContent = chavePrivada;
+
+            // Calcula o ângulo dos ponteiros
+            const horaAngulo = (hora / 16) * 360;
+            const minutoAngulo = (minuto / 64) * 360;
+            const segundoAngulo = (segundo / 60) * 360;
+
+            // Atualiza a rotação dos ponteiros
+            document.getElementById("hourHand").style.transform = `translateX(-50%) rotate(${horaAngulo}deg)`;
+            document.getElementById("minuteHand").style.transform = `translateX(-50%) rotate(${minutoAngulo}deg)`;
+            document.getElementById("secondHand").style.transform = `translateX(-50%) rotate(${segundoAngulo}deg)`;
+        }
+
+        // Atualiza o relógio a cada segundo
+        setInterval(atualizarRelogio, 1000); // Atualiza a cada segundo
+        atualizarRelogio(); // Atualiza imediatamente ao carregar a página
+    </script>
+</body>
+</html>

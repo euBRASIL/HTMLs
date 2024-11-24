@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversão Fonética para Hertz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+        }
+        input[type="text"] {
+            padding: 8px;
+            font-size: 16px;
+            width: 200px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conversão Fonética para Hertz</h1>
+        <input type="text" id="inputWord" placeholder="Digite uma palavra...">
+        <button onclick="convertToHertz()">Converter</button>
+
+        <table id="resultTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Fonema</th>
+                    <th>Frequência (Hz)</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Mapa de fonemas para frequências
+        const phonemeFrequencyMap = {
+            'a': 400,
+            'e': 500,
+            'i': 600,
+            'o': 700,
+            'u': 800,
+            'b': 300,
+            'd': 350,
+            'f': 1200,
+            'g': 150,
+            'k': 200,
+            'l': 450,
+            'm': 250,
+            'n': 275,
+            'p': 320,
+            'r': 475,
+            's': 1800,
+            't': 2500,
+            'v': 1350,
+            'z': 3000,
+            'ch': 2200,
+            'nh': 1400,
+            'lh': 1250
+        };
+
+        function convertToHertz() {
+            const word = document.getElementById("inputWord").value.toLowerCase();
+            const resultTable = document.getElementById("resultTable");
+            const tbody = resultTable.querySelector("tbody");
+
+            // Limpar resultados anteriores
+            tbody.innerHTML = "";
+
+            // Dividir a palavra em fonemas e mapear frequências
+            const phonemes = Array.from(word); // Simples divisão por caracteres
+            phonemes.forEach(phoneme => {
+                const frequency = phonemeFrequencyMap[phoneme] || "N/A"; // N/A se não estiver no mapa
+
+                // Adicionar linha na tabela
+                const row = document.createElement("tr");
+                const phonemeCell = document.createElement("td");
+                const frequencyCell = document.createElement("td");
+
+                phonemeCell.textContent = phoneme;
+                frequencyCell.textContent = frequency;
+
+                row.appendChild(phonemeCell);
+                row.appendChild(frequencyCell);
+                tbody.appendChild(row);
+            });
+
+            // Exibir a tabela
+            resultTable.style.display = "table";
+        }
+    </script>
+</body>
+</html>

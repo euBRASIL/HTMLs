@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste ECDSA SECP256K1</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"></script>
+</head>
+<body>
+  <h1>Gerar Pontos da Curva Elíptica SECP256K1</h1>
+  <button id="generate">Gerar Pontos e Baixar CSV</button>
+
+  <script>
+    // Inicializando a curva elíptica SECP256K1
+    const EC = elliptic.ec;
+    const ec = new EC('secp256k1');
+
+    // Função para gerar pontos na curva elíptica
+    function generateECPoints(limit) {
+      let points = [];
+      for (let i = 1; i <= limit; i++) {
+        const point = ec.g.mul(i);  // Multiplicando o ponto base G por um escalar
+        points.push({ x: point.getX().toString(10), y: point.getY().toString(10) });
+      }
+      return points;
+    }
+
+    // Função para calcular percentual de X/p com precisão de 77 casas decimais
+    function calculatePercent(x) {
+      const p = BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F");  // Campo finito (primo)
+      const divisor = BigInt('1' + '0'.repeat(77));
+      const percentage = (BigInt(x) * divisor) / p;
+      const percentageString = percentage.toString().padStart(77, '0');
+      return `0.${percentageString}`;  // Formata com "0." no início
+    }
+
+    // Função para salvar em CSV no navegador com legenda e linha em branco
+    function saveToCSV(points) {
+      let csvContent = "Legenda\nX: Coordenada X\nY: Coordenada Y\nPercentual: 0.(percentual de X/p com 77 casas decimais)\n\n";
+      points.forEach(point => {
+        let percentX = calculatePercent(point.x);
+        csvContent += `X: ${point.x},\n Y: ${point.y},\n Percentual: ${percentX}\n\n`;  // Linha em branco após cada ponto
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ecdsa_points_legenda.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Evento para o botão de gerar pontos e salvar CSV
+    document.getElementById('generate').addEventListener('click', function() {
+      const points = generateECPoints(1000);  // Gera até 1000 pontos
+      saveToCSV(points);
+    });
+  </script>
+</body>
+</html>

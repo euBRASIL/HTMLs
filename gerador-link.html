@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css'>
+  
+<style>
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.panel-primary>.panel-heading {
+    color: #000000;
+    background-color: #fff;
+    border-color: #000000;
+}
+a {
+    color: #008000;
+    text-decoration: none;
+}
+.icon { 
+    vertical-align: middle;
+    display: inline-block;
+}
+.text {
+  vertical-align: middle;
+  display: inline-block;
+  font-size: 14px;
+  font-weight: bold;
+}
+</style>
+
+  <script>
+  window.console = window.console || function(t) {};
+</script>
+
+  
+  
+  <script>
+  if (document.location.search.match(/type=embed/gi)) {
+    window.parent.postMessage("resize", "*");
+  }
+</script>
+
+
+</head>
+
+<body translate="no" >
+  <div class="container">
+  <div class="panel panel-default panel-primary" id="mainpanel">
+    <div class="panel-heading">
+        <span class="cardSpan">
+  <span class="icon">
+    <svg style="width:40px;height:40px" xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><g><path d='M29,19.26a1,1,0,0,0,0-.34s0-.05,0-.08a.94.94,0,0,0-.11-.32v0l-8-14A1,1,0,0,0,20,4H12a1,1,0,0,0-.86.5,1,1,0,0,0,0,1L14.85,12,8,24,5.15,19l5.38-9.41a1,1,0,0,0-1.74-1L3.13,18.5a1,1,0,0,0,0,1l4,7,.16.21h0a1,1,0,0,0,.27.19l.08,0A1,1,0,0,0,8,27H24a1,1,0,0,0,.87-.5l4-7a1,1,0,0,0,.09-.22ZM19.42,6l6.86,12h-5.7L13.72,6ZM18.28,18H13.72L16,14Zm5.14,7H9.72l2.86-5h13.7Z'/></g></svg>
+  </span>
+  <span class="text">Download Link Generator</span>
+</span>
+    </div>
+    <div class="panel-body">
+      <form>
+        <div class="form-group">
+          <label for="sharelink">Link ***compartilhado***</label>
+          <input type="text" class="form-control" id="sharelink" placeholder="https://drive.google.com/file/d/XX-X__XXXXX-XXXXXXXXXXXXXXXX/view?usp=sharing" autofocus="true">
+        </div>
+        <div class="form-group">
+          <label for="downloadlink">Link para Download</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="downloadlink" readonly>
+            <span class="input-group-btn">
+        <button id="copylinkbtn" class="btn btn-primary" type="button" data-clipboard-target="#downloadlink" disabled>Copy link</button>
+      </span>
+          </div>
+        </div>
+      </form>
+
+  <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+  Show instructions
+</button>
+  <div class="collapse" id="collapseExample">
+   <br />
+    <div class="well text-center">
+      <img src="https://drive.google.com/uc?export=download&id=0B-B__6JMBt-jb1MxWHY5UE5QUXM" alt="" />
+    </div>
+  </div>      
+      
+    </div>
+    <div class="panel-footer text-right">&copy; 2025 | euBRASIL ☯ <a href="https://www.fastbrains.in" target="_blank">Ricardo euBRASIL</a>	</div>
+  </div>
+  
+</div>
+    <script src="https://cpwebassets.codepen.io/assets/common/stopExecutionOnTimeout-157cd5b220a5c80d4ff8e0e70ac069bffd87a61252088146915e8726e5d9f147.js"></script>
+
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.2/jquery.min.js'></script>
+<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.10/clipboard.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/mouse0270-bootstrap-notify/3.1.5/bootstrap-notify.min.js'></script>
+      <script id="rendered-js" >
+(function ($) {
+  $(function () {
+    var $shareLink = $('#sharelink'),
+    $downloadLink = $('#downloadlink'),
+    $copyButton = $('#copylinkbtn'),
+    clipboard;
+
+    $shareLink.on('keyup paste', function () {
+      var link = $shareLink.val(),
+      l = link.replace(/\/file\/d\/(.+)\/(.+)/, "/uc?export=download&id=$1");
+      if (l !== link) {
+        $downloadLink.val(l);
+        $copyButton.removeAttr('disabled');
+      } else {
+        $downloadLink.val('');
+        $copyButton.attr('disabled', 'disabled');
+      }
+    });
+
+    $downloadLink.on('click', function () {
+      $downloadLink.select();
+    });
+
+    clipboard = new Clipboard('#copylinkbtn');
+    clipboard.on('success', function (e) {
+      $.notify({
+        icon: 'glyphicon glyphicon-ok-circle',
+        title: 'Link copied to clipboard:',
+        message: e.text,
+        url: e.text,
+        target: '_blank' },
+      {
+        // settings
+        type: "success",
+        placement: {
+          from: "top",
+          align: "center" } });
+
+
+
+      // $.notify(e.text + " copied to clipboard.");
+
+      e.clearSelection();
+    });
+
+  });
+})(jQuery);
+//# sourceURL=pen.js
+    </script>
+
+  
+
+</body>
+
+</html>
+ 

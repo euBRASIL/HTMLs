@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relógio de 16 Horas com 64 Minutos</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .clock {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .center-point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #444;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .hand {
+            position: absolute;
+            width: 2px;
+            background-color: #333;
+            top: 50%; /* Centraliza o ponto de origem */
+            left: 50%;
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%) rotate(0deg); /* Ajuste para centralizar */
+            transition: transform 0.05s ease-in-out;
+        }
+        #hourHand {
+            height: 25%; /* Comprimento do ponteiro das horas */
+            background-color: #333;
+            width: 4px;
+        }
+        #minuteHand {
+            height: 35%; /* Comprimento do ponteiro dos minutos */
+            background-color: #666;
+            width: 3px;
+        }
+        #secondHand {
+            height: 40%; /* Comprimento do ponteiro dos segundos */
+            background-color: #e63946;
+            width: 2px;
+        }
+        .hours {
+            color: #333;
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            bottom: 10px;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock">
+        <div class="center-point"></div>
+        <div class="hand" id="hourHand"></div>
+        <div class="hand" id="minuteHand"></div>
+        <div class="hand" id="secondHand"></div>
+        <div class="hours" id="hourText"></div>
+    </div>
+
+    <script>
+        const totalMinutes = 1024; // Total de minutos no dia
+        const minutesPerHour = 64; // Minutos por "hora"
+        const hoursInDay = 16;     // Horas no "dia"
+        const secondInRealLife = 1000; // Atualização a cada segundo
+
+        function updateClock() {
+            const currentTime = new Date();
+
+            const totalMinutesPassed = (currentTime.getHours() % hoursInDay) * minutesPerHour 
+                                        + Math.floor((currentTime.getMinutes() / 60) * minutesPerHour);
+            const hours = Math.floor(totalMinutesPassed / minutesPerHour) % hoursInDay;
+            const minutes = totalMinutesPassed % minutesPerHour;
+
+            const seconds = currentTime.getSeconds();
+            const milliseconds = currentTime.getMilliseconds();
+            const secondFraction = (seconds + milliseconds / 1000) / 60;
+
+            // Calcula o ângulo das mãos
+            const hourAngle = ((hours + (minutes / minutesPerHour)) / hoursInDay) * 360;
+            const minuteAngle = (minutes / minutesPerHour) * 360;
+            const secondAngle = secondFraction * 360;
+
+            // Atualiza as mãos do relógio
+            document.getElementById("hourHand").style.transform = `translate(-50%, -100%) rotate(${hourAngle}deg)`;
+            document.getElementById("minuteHand").style.transform = `translate(-50%, -100%) rotate(${minuteAngle}deg)`;
+            document.getElementById("secondHand").style.transform = `translate(-50%, -100%) rotate(${secondAngle}deg)`;
+
+            // Atualiza o texto da hora e dos minutos
+            document.getElementById("hourText").textContent = `Hora: ${hours} | Minuto: ${minutes}`;
+        }
+
+        // Atualiza o relógio a cada segundo
+        setInterval(updateClock, secondInRealLife);
+
+        // Inicia o relógio na carga inicial da página
+        updateClock();
+    </script>
+</body>
+</html>

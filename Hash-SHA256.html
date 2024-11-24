@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="tree"></div>
+
+</body>
+<script>
+function sha256(data) {
+  var crypto = window.crypto || window.msCrypto; // para suporte em navegadores antigos
+  var hash = crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+  return hash;
+}
+
+function hexString(buffer) {
+  var hexCodes = [];
+  var view = new DataView(buffer);
+  for (var i = 0; i < view.byteLength; i += 4) {
+    // Aplicar hexadecimal para cada byte
+    var value = view.getUint32(i);
+    var stringValue = value.toString(16);
+    var padding = '00000000';
+    var paddedValue = (padding + stringValue).slice(-padding.length);
+    hexCodes.push(paddedValue);
+  }
+  // Juntar tudo em uma única string hexadecimal
+  return hexCodes.join("");
+}
+
+var input = "minha informação";
+var hash = sha256(input);
+hash.then(function (result) {
+  var hex = hexString(result);
+  document.getElementById("tree").innerHTML = hex;
+});
+
+</script>
+</html>

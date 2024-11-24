@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Chave Privada com Animação</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(64, 15px);
+            grid-template-rows: repeat(16, 15px);
+            gap: 3px;
+            margin: 20px;
+        }
+        .cell {
+            width: 15px;
+            height: 15px;
+            background-color: #e0e0e0;
+        }
+        .highlight {
+            background-color: #4CAF50; /* Cor do quadrado aceso */
+        }
+        .key-display {
+            font-size: 1rem;
+            margin-top: 20px;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        .controls button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Gerador de Chave Privada com Animação</h2>
+    <div class="grid" id="grid"></div>
+    <div class="key-display" id="keyDisplay">Chave Privada: </div>
+    <div class="controls">
+        <button id="startBtn">Iniciar</button>
+        <button id="stopBtn">Parar</button>
+        <button id="generateBtn">Gerar Nova Chave</button>
+        <button id="copyBtn">Copiar Chave</button>
+    </div>
+
+    <script>
+        const gridElement = document.getElementById("grid");
+        const keyDisplay = document.getElementById("keyDisplay");
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const generateBtn = document.getElementById("generateBtn");
+        const copyBtn = document.getElementById("copyBtn");
+
+        // Cria a matriz de células (16x64)
+        const numRows = 16;
+        const numCols = 64;
+        let cells = [];
+
+        for (let i = 0; i < numRows * numCols; i++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            gridElement.appendChild(cell);
+            cells.push(cell);
+        }
+
+        // Função para gerar uma chave privada hexadecimal de 64 dígitos
+        function generatePrivateKey() {
+            let privateKey = '';
+            for (let i = 0; i < 64; i++) {
+                const randomHex = Math.floor(Math.random() * 16).toString(16);
+                privateKey += randomHex;
+            }
+            return privateKey;
+        }
+
+        // Função para animar o quadrado e gerar novas chaves
+        let currentPosition = numRows * numCols - numCols; // Início na última linha, primeira coluna
+        let animationInterval;
+
+        function animateSquare() {
+            // Limpa o quadrado anterior
+            cells[currentPosition].classList.remove("highlight");
+
+            // Calcula a nova posição do quadrado
+            currentPosition++;
+            if (currentPosition >= numRows * numCols) {
+                currentPosition = numRows * numCols - numCols; // Retorna ao início da última linha
+            }
+
+            // Ilumina a nova posição
+            cells[currentPosition].classList.add("highlight");
+
+            // Gera e exibe a nova chave privada
+            const newKey = generatePrivateKey();
+            keyDisplay.textContent = `Chave Privada: ${newKey}`;
+            localStorage.setItem('lastPrivateKey', newKey);
+        }
+
+        // Inicia a animação com intervalo de 1 segundo
+        function startAnimation() {
+            if (!animationInterval) {
+                animationInterval = setInterval(animateSquare, 1000);
+            }
+        }
+
+        // Para a animação
+        function stopAnimation() {
+            clearInterval(animationInterval);
+            animationInterval = null;
+        }
+
+        // Gera uma nova chave privada manualmente
+        function generateNewKey() {
+            const newKey = generatePrivateKey();
+            keyDisplay.textContent = `Chave Privada: ${newKey}`;
+            localStorage.setItem('lastPrivateKey', newKey);
+        }
+
+        // Copia a chave privada para a área de transferência
+        async function copyKey() {
+            try {
+                const key = keyDisplay.textContent.split(': ')[1];
+                await navigator.clipboard.writeText(key);
+                alert('Chave privada copiada para a área de transferência!');
+            } catch (err) {
+                console.error('Falha ao copiar: ', err);
+                alert('Não foi possível copiar a chave privada.');
+            }
+        }
+
+        // Carrega a última chave privada salva no armazenamento local
+        window.onload = () => {
+            const lastKey = localStorage.getItem('lastPrivateKey');
+            if (lastKey) {
+                keyDisplay.textContent = `Chave Privada: ${lastKey}`;
+            }
+        };
+
+        // Adiciona eventos aos botões
+        startBtn.addEventListener('click', startAnimation);
+        stopBtn.addEventListener('click', stopAnimation);
+        generateBtn.addEventListener('click', generateNewKey);
+        copyBtn.addEventListener('click', copyKey);
+    </script>
+
+</body>
+</html>

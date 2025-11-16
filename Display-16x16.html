@@ -1,0 +1,201 @@
+<!doctype html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>16×16 Binary Adder — Visual com IF + Carry + Leitura</title>
+<style>
+  :root{--bg:#0f1720;--panel:#0b1220;--accent:#2b8cf5;--op:#ff9f43;--changed:#52ee7a}
+  body{font-family:Inter,system-ui,Segoe UI,Helvetica,Arial;background:var(--bg);color:#e6eef8;margin:0;padding:18px;display:flex;gap:18px}
+  .col{background:linear-gradient(180deg,#071027, #071827);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.6);flex:1}
+  h1{font-size:16px;margin:0 0 8px}
+  p{margin:6px 0;color:#bcd}
+  svg{background:transparent;border-radius:8px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  button,input,select{padding:8px;border-radius:8px;border:none;background:#0b2036;color:#e6eef8;cursor:pointer}
+  .small{font-size:13px;color:#9fb7d6}
+  .info{margin-top:10px;font-family:monospace;background:rgba(255,255,255,0.02);padding:10px;border-radius:8px}
+</style>
+</head>
+<body>
+  <div class="col" style="max-width:640px">
+    <h1>Visual 16×16 — Soma Condicional + Carry</h1>
+    <p class="small">Cada pixel = 1 bit. O painel <strong>R</strong> (azul) é somado condicionalmente com <strong>P</strong> (laranja) quando <em>S[k]</em> = 1. Mostramos a propagação do carry (linhas) e destacamos bits alterados. Você pode ler o valor de R como um inteiro 256-bit.</p><svg id="main" width="520" height="420" viewBox="0 0 520 420" xmlns="http://www.w3.org/2000/svg">
+  <!-- labels -->
+  <rect x="8" y="8" width="336" height="336" rx="8" stroke="#102233" fill="#041021" />
+  <text x="12" y="24" fill="#9fd3ff" font-size="12">R (registrador)</text>
+  <g id="r_group" transform="translate(8,28)"></g>
+
+  <rect x="360" y="8" width="144" height="144" rx="6" fill="#041021" stroke="#102233"/>
+  <text x="362" y="24" fill="#ffd9a8" font-size="12">P (operando)</text>
+  <g id="p_group" transform="translate(360,28)"></g>
+
+  <!-- carry layer -->
+  <g id="carry_layer" stroke="#78d0ff" stroke-width="1.6" fill="none"></g>
+
+  <!-- indicators -->
+  <g id="indicators">
+    <rect x="360" y="176" width="144" height="56" rx="6" fill="#041021" stroke="#102233"/>
+    <text id="sel_text" x="368" y="196" fill="#cde8ff" font-size="13">S[k]=0</text>
+    <text id="step_text" x="368" y="214" fill="#9fb7d6" font-size="12">Passo 0/255</text>
+  </g>
+
+  <!-- changed highlight border -->
+  <rect id="overflow" x="8" y="8" width="336" height="336" rx="8" fill="none" stroke="transparent" stroke-width="3"/>
+</svg>
+
+<div class="controls">
+  <button id="play">Play</button>
+  <button id="pause">Pause</button>
+  <button id="step">Step</button>
+  <button id="read">Ler R (BigInt)</button>
+  <select id="mode"><option value="ripple">ripple-carry (visual)</option><option value="fast">sem animação (instant)</option></select>
+  <button id="random">Randomize</button>
+  <button id="clear">Clear</button>
+</div>
+
+<div class="info" id="info">Passo: 0 — S[k]=0 — Bits alterados: 0 — Overflow: 0</div>
+
+  </div>  <div class="col">
+    <h1>Leitura & Debug</h1>
+    <p class="small">Aqui mostramos trechos de R (LSB à esquerda) e o valor inteiro (BigInt) convertido. Use <em>Ler R</em> para extrair o número completo.</p><div class="small" id="snippet">R[0..31]: —</div>
+<pre id="bigint" style="margin-top:10px;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;overflow:auto;max-height:300px">0n</pre>
+
+  </div><script>
+const W=16,H=16, total=W*H, cell=20; // cell for main R grid
+let R=new Uint8Array(total), P=new Uint8Array(total), S=new Uint8Array(total);
+let stepIndex=0, playing=false, mode='ripple';
+
+const svgMain = document.getElementById('main');
+const rGroup = document.getElementById('r_group');
+const pGroup = document.getElementById('p_group');
+const carryLayer = document.getElementById('carry_layer');
+const selText = document.getElementById('sel_text');
+const stepText = document.getElementById('step_text');
+const info = document.getElementById('info');
+const overflowRect = document.getElementById('overflow');
+
+// build R grid (16x16 small squares)
+for(let y=0;y<H;y++){
+  for(let x=0;x<W;x++){
+    const i = y*W + x;
+    const rx = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rx.setAttribute('x', 12 + x*(cell+2));
+    rx.setAttribute('y', 32 + y*(cell+2));
+    rx.setAttribute('width', cell);
+    rx.setAttribute('height', cell);
+    rx.setAttribute('id','r_'+i);
+    rx.setAttribute('fill','transparent');
+    rx.setAttribute('stroke','#071f32');
+    rGroup.appendChild(rx);
+  }
+}
+
+// build P grid small
+for(let y=0;y<8;y++){
+  for(let x=0;x<8;x++){
+    const i = y*8 + x; // show first 64 bits only in P area (for simplicity)
+    const px = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    px.setAttribute('x', 362 + x*(18));
+    px.setAttribute('y', 30 + y*(18));
+    px.setAttribute('width', 16);
+    px.setAttribute('height', 16);
+    px.setAttribute('id','p_'+i);
+    px.setAttribute('fill','transparent');
+    px.setAttribute('stroke','#f2d4a3');
+    pGroup.appendChild(px);
+  }
+}
+
+function renderAll(){
+  for(let i=0;i<total;i++){ const el=document.getElementById('r_'+i); if(el) el.setAttribute('fill', R[i]? '#2b8cf5' : 'transparent'); }
+  for(let i=0;i<64;i++){ const el=document.getElementById('p_'+i); if(el) el.setAttribute('fill', P[i]? '#ff9f43' : 'transparent'); }
+}
+
+// helper to convert bits -> BigInt (LSB index 0)
+function bitsToBigInt(bits){
+  let n=0n;
+  for(let i=0;i<bits.length;i++) if(bits[i]) n |= (1n << BigInt(i));
+  return n;
+}
+
+function updateInfo(){
+  selText.textContent = 'S[k] = ' + (S[stepIndex] || 0);
+  stepText.textContent = `Passo ${stepIndex}/${total-1}`;
+  document.getElementById('snippet').textContent = 'R[0..31]: ' + Array.from(R.slice(0,32)).join('');
+  document.getElementById('bigint').textContent = bitsToBigInt(R).toString() + 'n';
+}
+
+// simple randomize
+function randomize(){ for(let i=0;i<total;i++){ R[i]=Math.random()<0.12?1:0; P[i]=Math.random()<0.12?1:0; S[i]=Math.random()<0.45?1:0; } renderAll(); updateInfo(); }
+function clearAll(){ R.fill(0); P.fill(0); S.fill(0); stepIndex=0; renderAll(); updateInfo(); }
+
+// animate carry arrow between bit i and i+1 (visual: small curved path)
+function drawCarry(i){
+  const x1 = 12 + (i%W)*(cell+2) + cell/2;
+  const y1 = 32 + Math.floor(i/W)*(cell+2) + cell/2;
+  const x2 = 12 + ((i+1)%W)*(cell+2) + cell/2;
+  const y2 = 32 + Math.floor((i+1)/W)*(cell+2) + cell/2;
+
+  // clear previous
+  carryLayer.innerHTML = '';
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const midx = (x1 + x2)/2; const midy = (y1 + y2)/2 - 8;
+  const d = `M ${x1} ${y1} Q ${midx} ${midy} ${x2} ${y2}`;
+  path.setAttribute('d', d);
+  path.setAttribute('stroke', '#78d0ff'); path.setAttribute('stroke-width','1.6'); path.setAttribute('fill','none');
+  carryLayer.appendChild(path);
+}
+
+// ripple adder step (visual)
+async function adderStep(k){
+  const sel = S[k];
+  const B = new Uint8Array(total);
+  if(sel) for(let i=0;i<total;i++) B[i]=P[i];
+  let carry=0, changed=0;
+  for(let i=0;i<total;i++){
+    // show current bit highlight
+    const el = document.getElementById('r_'+i);
+    if(el) el.setAttribute('stroke','#ffffff');
+    // draw carry to next
+    drawCarry(i);
+    await sleep(12);
+    const sum = R[i] + B[i] + carry;
+    const out = sum & 1; const newc = sum>1?1:0;
+    if(out !== R[i]) changed++;
+    R[i]=out;
+    carry=newc;
+    if(el) el.setAttribute('stroke','#071f32');
+    // render this bit immediately
+    if(el) el.setAttribute('fill', R[i]? '#2b8cf5' : 'transparent');
+    // small pause for visibility
+    if(mode==='ripple') await sleep(6);
+  }
+  // overflow flash
+  if(carry){ overflowRect.setAttribute('stroke','#ff6b6b'); setTimeout(()=>overflowRect.setAttribute('stroke','transparent'),350); }
+  carryLayer.innerHTML='';
+  updateInfo();
+  return changed;
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+// controls
+document.getElementById('play').addEventListener('click', ()=>{ if(playing) return; playing=true; (async()=>{ while(playing){ const ch = await adderStep(stepIndex); stepIndex=(stepIndex+1)%total; info.textContent = `Passo: ${stepIndex} — S[k]=${S[stepIndex]} — Bits alterados: ${ch}`; await sleep(40); } })(); });
+
+document.getElementById('pause').addEventListener('click', ()=>{ playing=false; });
+
+document.getElementById('step').addEventListener('click', async ()=>{ playing=false; const ch=await adderStep(stepIndex); stepIndex=(stepIndex+1)%total; info.textContent = `Passo: ${stepIndex} — S[k]=${S[stepIndex]} — Bits alterados: ${ch}`; });
+
+document.getElementById('random').addEventListener('click', ()=>{ randomize(); });
+document.getElementById('clear').addEventListener('click', ()=>{ clearAll(); });
+document.getElementById('read').addEventListener('click', ()=>{ document.getElementById('bigint').textContent = bitsToBigInt(R).toString() + 'n'; });
+
+document.getElementById('mode').addEventListener('change',(e)=>{ mode=e.target.value; });
+
+// initial
+randomize();
+
+</script></body>
+</html>

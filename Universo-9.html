@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Esfera Matemática via Raiz Cúbica | Dualidade 6-9</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            touch-action: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Botão flutuante para ocultar/mostrar painel */
+        #btn-toggle-painel {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4a6fa5, #7eb8ff);
+            border: 2px solid rgba(126, 184, 255, 0.6);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(126, 184, 255, 0.4);
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #btn-toggle-painel:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(126, 184, 255, 0.6);
+        }
+
+        #btn-toggle-painel:active {
+            transform: scale(0.95);
+        }
+
+        #btn-toggle-painel .icone {
+            transition: transform 0.3s ease;
+        }
+
+        #btn-toggle-painel.ativo .icone {
+            transform: rotate(90deg);
+        }
+
+        /* Painel lateral */
+        #painel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 380px;
+            height: 100vh;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(100, 150, 255, 0.3);
+            padding: 20px;
+            z-index: 100;
+            box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #painel.oculto {
+            transform: translateX(-100%);
+        }
+
+        #painel h1 {
+            font-size: 1.3em;
+            color: #7eb8ff;
+            margin-bottom: 8px;
+            text-align: center;
+            letter-spacing: 1px;
+            margin-top: 40px;
+        }
+
+        #painel h2 {
+            font-size: 1em;
+            color: #ffb86c;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 184, 108, 0.3);
+            padding-bottom: 4px;
+        }
+
+        #painel p {
+            font-size: 0.85em;
+            line-height: 1.5;
+            color: #b8c5d6;
+            margin-bottom: 10px;
+        }
+
+        .controle {
+            margin: 15px 0;
+        }
+
+        .controle label {
+            display: block;
+            font-size: 0.9em;
+            color: #7eb8ff;
+            margin-bottom: 5px;
+        }
+
+        .controle input[type="range"] {
+            width: 100%;
+            accent-color: #7eb8ff;
+            height: 6px;
+        }
+
+        .controle .valor {
+            display: inline-block;
+            background: rgba(126, 184, 255, 0.15);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #ffb86c;
+            margin-left: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4a6fa5, #7eb8ff);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            margin-top: 10px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(126, 184, 255, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .info-box {
+            background: rgba(126, 184, 255, 0.08);
+            border-left: 3px solid #7eb8ff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .info-box.natureza-9 {
+            border-left-color: #7eb8ff;
+        }
+
+        .info-box.natureza-6 {
+            border-left-color: #ff6b9d;
+        }
+
+        .info-box.ponte-7 {
+            border-left-color: #ffd93d;
+        }
+
+        .linha-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .linha-info .rotulo {
+            color: #b8c5d6;
+        }
+
+        .linha-info .valor-num {
+            color: #ffb86c;
+            font-weight: bold;
+        }
+
+        #log-iteracoes {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 180px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78em;
+            line-height: 1.6;
+        }
+
+        #log-iteracoes .iter {
+            color: #7eb8ff;
+        }
+
+        #log-iteracoes .setima {
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        #painel::-webkit-scrollbar,
+        #log-iteracoes::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #painel::-webkit-scrollbar-track,
+        #log-iteracoes::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        #painel::-webkit-scrollbar-thumb,
+        #log-iteracoes::-webkit-scrollbar-thumb {
+            background: rgba(126, 184, 255, 0.4);
+            border-radius: 3px;
+        }
+
+        .assinatura {
+            text-align: center;
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        /* Overlay escuro quando painel está aberto em mobile */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #overlay.visivel {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Responsividade para mobile */
+        @media (max-width: 768px) {
+            #painel {
+                width: 100%;
+                max-width: 100%;
+                border-right: none;
+            }
+
+            #btn-toggle-painel {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+                top: 10px;
+                right: 10px;
+            }
+
+            #painel h1 {
+                margin-top: 50px;
+            }
+
+            .controle input[type="range"] {
+                height: 8px;
+            }
+
+            button {
+                padding: 14px;
+                font-size: 1em;
+            }
+        }
+
+        /* Toast de notificação */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(126, 184, 255, 0.95);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: bold;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        #toast.visivel {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <!-- Botão flutuante para ocultar/mostrar painel -->
+    <button id="btn-toggle-painel" class="ativo" onclick="togglePainel()">
+        <span class="icone">☰</span>
+    </button>
+
+    <!-- Overlay para mobile -->
+    <div id="overlay" onclick="togglePainel()"></div>
+
+    <!-- Toast de notificação -->
+    <div id="toast"></div>
+
+    <div id="painel">
+        <h1>⬡ ESFERA CÚBICA ⬡</h1>
+        <p style="text-align:center; font-size:0.8em; color:#888;">
+            Construção geométrica via Raiz Cúbica<br>
+            <em>Dualidade 6-9 | A Sétima Pirâmide</em>
+        </p>
+
+        <h2>⬢ Parâmetros</h2>
+        <div class="controle">
+            <label>
+                Volume Total:
+                <span class="valor" id="valor-volume">100</span>
+            </label>
+            <input type="range" id="slider-volume" min="10" max="1000" value="100" step="10">
+        </div>
+
+        <div class="controle">
+            <label>
+                Iterações (1-7):
+                <span class="valor" id="valor-iteracoes">7</span>
+            </label>
+            <input type="range" id="slider-iteracoes" min="1" max="7" value="7" step="1">
+        </div>
+
+        <button onclick="reconstruirEsfera()">🔄 Reconstruir Esfera</button>
+        <button onclick="alternarEixos()" style="background: linear-gradient(135deg, #a54a6f, #ff6b9d);">
+            👁 Alternar 6 Eixos (Finito)
+        </button>
+
+        <h2>⬡ Natureza 9 — Infinito (Esfera)</h2>
+        <div class="info-box natureza-9">
+            <div class="linha-info">
+                <span class="rotulo">Raio (∛):</span>
+                <span class="valor-num" id="info-raio">—</span>
+            </div>
+            <div class="linha-info">
+                <span class="rotulo">Volume:</span>
+                <span class="valor-num" id="info-volume">—</span>
+            </div>
+            <div class="linha-info">
+                <span class="rotulo">Superfície:</span>
+                <span class="valor-num" id="info-superficie">—</span>
+            </div>
+            <div class="linha-info">
+                <span class="rotulo">Simetria:</span>
+                <span class="valor-num">Contínua</span>
+            </div>
+        </div>
+
+        <h2>⬢ Natureza 6 — Finito (Cubo Inscrito)</h2>
+        <div class="info-box natureza-6">
+            <div class="linha-info">
+                <span class="rotulo">Lado:</span>
+                <span class="valor-num" id="info-lado">—</span>
+            </div>
+            <div class="linha-info">
+                <span class="rotulo">Volume:</span>
+                <span class="valor-num" id="info-vol-cubo">—</span>
+            </div>
+            <div class="linha-info">
+                <span class="rotulo">Faces:</span>
+                <span class="valor-num">6</span>
+            </div>
+            <div class="linha-info">
+                <span class="rotulo">Razão Cubo/Esfera:</span>
+                <span class="valor-num" id="info-razao">—</span>
+            </div>
+        </div>
+
+        <h2>✦ Ponte 7 — Sétima Pirâmide</h2>
+        <div class="info-box ponte-7">
+            <div id="log-iteracoes"></div>
+        </div>
+
+        <p class="assinatura">
+            "O espaço possui natureza de número 9"<br>
+            — Geometria Sagrada Computacional
+        </p>
+    </div>
+
+    <script>
+        // ============================================================
+        // CLASSE ESFERA CÚBICA
+        // ============================================================
+        class EsferaCubica {
+            constructor(volumeTotal) {
+                this.volume = volumeTotal;
+                this.raio = this._calcularRaioCubico();
+                this.pontosEsfera = [];
+            }
+
+            _calcularRaioCubico() {
+                const fatorEsfera = (4/3) * Math.PI;
+                const raioCubico = this.volume / fatorEsfera;
+                return Math.cbrt(raioCubico);
+            }
+
+            gerarPontos(resolucao) {
+                const pontos = [];
+                for (let i = 0; i <= resolucao; i++) {
+                    const theta = (i / resolucao) * Math.PI;
+                    for (let j = 0; j <= resolucao; j++) {
+                        const phi = (j / resolucao) * 2 * Math.PI;
+                        const x = this.raio * Math.sin(theta) * Math.cos(phi);
+                        const y = this.raio * Math.sin(theta) * Math.sin(phi);
+                        const z = this.raio * Math.cos(theta);
+                        pontos.push([x, y, z]);
+                    }
+                }
+                return pontos;
+            }
+
+            calcularErroEsfericidade(pontos) {
+                if (pontos.length === 0) return 0;
+                const distancias = pontos.map(p => Math.sqrt(p[0]**2 + p[1]**2 + p[2]**2));
+                const media = distancias.reduce((a, b) => a + b, 0) / distancias.length;
+                const variancia = distancias.reduce((acc, d) => acc + (d - media)**2, 0) / distancias.length;
+                return Math.sqrt(variancia) / this.raio;
+            }
+
+            revelarDualidade() {
+                const ladoCubo = 2 * this.raio / Math.sqrt(3);
+                const volumeCubo = ladoCubo ** 3;
+                const superficie = 4 * Math.PI * this.raio ** 2;
+                const razao = volumeCubo / this.volume;
+
+                return {
+                    raio: this.raio,
+                    volume: this.volume,
+                    superficie: superficie,
+                    ladoCubo: ladoCubo,
+                    volumeCubo: volumeCubo,
+                    razao: razao
+                };
+            }
+        }
+
+        // ============================================================
+        // CONTROLE DO PAINEL
+        // ============================================================
+        let painelVisivel = true;
+
+        function togglePainel() {
+            const painel = document.getElementById('painel');
+            const btn = document.getElementById('btn-toggle-painel');
+            const overlay = document.getElementById('overlay');
+            const isMobile = window.innerWidth <= 768;
+
+            painelVisivel = !painelVisivel;
+
+            if (painelVisivel) {
+                painel.classList.remove('oculto');
+                btn.classList.add('ativo');
+                btn.innerHTML = '<span class="icone">✕</span>';
+                if (isMobile) {
+                    overlay.classList.add('visivel');
+                }
+                mostrarToast('Painel aberto');
+            } else {
+                painel.classList.add('oculto');
+                btn.classList.remove('ativo');
+                btn.innerHTML = '<span class="icone">☰</span>';
+                overlay.classList.remove('visivel');
+                mostrarToast('Painel ocultado');
+            }
+        }
+
+        function mostrarToast(mensagem) {
+            const toast = document.getElementById('toast');
+            toast.textContent = mensagem;
+            toast.classList.add('visivel');
+            setTimeout(() => {
+                toast.classList.remove('visivel');
+            }, 2000);
+        }
+
+        // ============================================================
+        // CONFIGURAÇÃO THREE.JS
+        // ============================================================
+        let cena, camera, renderer, controles;
+        let grupoEsfera, grupoEixos;
+        let eixosVisiveis = true;
+        let esferaAtual = null;
+
+        function inicializarCena() {
+            const container = document.getElementById('canvas-container');
+
+            cena = new THREE.Scene();
+            cena.background = new THREE.Color(0x000000);
+
+            camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(8, 6, 8);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controles = new THREE.OrbitControls(camera, renderer.domElement);
+            controles.enableDamping = true;
+            controles.dampingFactor = 0.05;
+            controles.enablePan = true;
+            controles.minDistance = 3;
+            controles.maxDistance = 30;
+
+            const luzAmbiente = new THREE.AmbientLight(0x404040, 0.6);
+            cena.add(luzAmbiente);
+
+            const luzDirecional = new THREE.DirectionalLight(0xffffff, 0.8);
+            luzDirecional.position.set(5, 10, 7);
+            cena.add(luzDirecional);
+
+            const luzPonto = new THREE.PointLight(0x7eb8ff, 0.5);
+            luzPonto.position.set(-5, -5, -5);
+            cena.add(luzPonto);
+
+            const gridHelper = new THREE.GridHelper(20, 20, 0x333366, 0x222244);
+            cena.add(gridHelper);
+
+            const axesHelper = new THREE.AxesHelper(10);
+            cena.add(axesHelper);
+
+            grupoEsfera = new THREE.Group();
+            grupoEixos = new THREE.Group();
+            cena.add(grupoEsfera);
+            cena.add(grupoEixos);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animar();
+        }
+
+        function animar() {
+            requestAnimationFrame(animar);
+            controles.update();
+
+            if (grupoEsfera) {
+                grupoEsfera.rotation.y += 0.002;
+            }
+
+            renderer.render(cena, camera);
+        }
+
+        // ============================================================
+        // CONSTRUÇÃO DA ESFERA
+        // ============================================================
+        function construirEsferaVisual(esfera, iteracoesAlvo) {
+            while (grupoEsfera.children.length > 0) {
+                const child = grupoEsfera.children[0];
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+                grupoEsfera.remove(child);
+            }
+            while (grupoEixos.children.length > 0) {
+                const child = grupoEixos.children[0];
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+                grupoEixos.remove(child);
+            }
+
+            const log = document.getElementById('log-iteracoes');
+            log.innerHTML = '';
+
+            for (let i = 1; i <= iteracoesAlvo; i++) {
+                const resolucao = 10 * i;
+                const pontos = esfera.gerarPontos(resolucao);
+                const erro = esfera.calcularErroEsfericidade(pontos);
+
+                const classeIter = (i === 7) ? 'setima' : 'iter';
+                const prefixo = (i === 7) ? '★ ' : '';
+                log.innerHTML += `<div class="${classeIter}">${prefixo}Iter ${i}: ${resolucao}² pts | Erro: ${erro.toFixed(6)}</div>`;
+            }
+
+            const geometriaEsfera = new THREE.SphereGeometry(esfera.raio, 64, 64);
+            const materialEsfera = new THREE.MeshPhongMaterial({
+                color: 0x7eb8ff,
+                transparent: true,
+                opacity: 0.3,
+                shininess: 100,
+                side: THREE.DoubleSide
+            });
+            const meshEsfera = new THREE.Mesh(geometriaEsfera, materialEsfera);
+            grupoEsfera.add(meshEsfera);
+
+            const materialWire = new THREE.MeshBasicMaterial({
+                color: 0x7eb8ff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.15
+            });
+            const meshWire = new THREE.Mesh(geometriaEsfera, materialWire);
+            grupoEsfera.add(meshWire);
+
+            const pontosAmostra = esfera.gerarPontos(20);
+            const geometriaPontos = new THREE.BufferGeometry();
+            const posicoes = new Float32Array(pontosAmostra.length * 3);
+            pontosAmostra.forEach((p, idx) => {
+                posicoes[idx * 3] = p[0];
+                posicoes[idx * 3 + 1] = p[1];
+                posicoes[idx * 3 + 2] = p[2];
+            });
+            geometriaPontos.setAttribute('position', new THREE.BufferAttribute(posicoes, 3));
+            const materialPontos = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.08,
+                transparent: true,
+                opacity: 0.8
+            });
+            const pontosMesh = new THREE.Points(geometriaPontos, materialPontos);
+            grupoEsfera.add(pontosMesh);
+
+            const direcoes = [
+                [1, 0, 0], [-1, 0, 0],
+                [0, 1, 0], [0, -1, 0],
+                [0, 0, 1], [0, 0, -1]
+            ];
+            const coresEixos = [0xff6b9d, 0xff6b9d, 0xffd93d, 0xffd93d, 0x6bff9d, 0x6bff9d];
+
+            direcoes.forEach((dir, idx) => {
+                const geometriaLinha = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(dir[0] * esfera.raio, dir[1] * esfera.raio, dir[2] * esfera.raio)
+                ]);
+                const materialLinha = new THREE.LineBasicMaterial({
+                    color: coresEixos[idx],
+                    linewidth: 2,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const linha = new THREE.Line(geometriaLinha, materialLinha);
+                grupoEixos.add(linha);
+
+                const geometriaPonto = new THREE.SphereGeometry(0.12, 16, 16);
+                const materialPonto = new THREE.MeshBasicMaterial({ color: coresEixos[idx] });
+                const ponto = new THREE.Mesh(geometriaPonto, materialPonto);
+                ponto.position.set(
+                    dir[0] * esfera.raio,
+                    dir[1] * esfera.raio,
+                    dir[2] * esfera.raio
+                );
+                grupoEixos.add(ponto);
+            });
+
+            const ladoCubo = 2 * esfera.raio / Math.sqrt(3);
+            const geometriaCubo = new THREE.BoxGeometry(ladoCubo, ladoCubo, ladoCubo);
+            const materialCubo = new THREE.MeshBasicMaterial({
+                color: 0xff6b9d,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.4
+            });
+            const cubo = new THREE.Mesh(geometriaCubo, materialCubo);
+            grupoEixos.add(cubo);
+
+            grupoEixos.visible = eixosVisiveis;
+
+            atualizarPainel(esfera);
+        }
+
+        function atualizarPainel(esfera) {
+            const dualidade = esfera.revelarDualidade();
+
+            document.getElementById('info-raio').textContent = dualidade.raio.toFixed(4);
+            document.getElementById('info-volume').textContent = dualidade.volume.toFixed(2);
+            document.getElementById('info-superficie').textContent = dualidade.superficie.toFixed(2);
+            document.getElementById('info-lado').textContent = dualidade.ladoCubo.toFixed(4);
+            document.getElementById('info-vol-cubo').textContent = dualidade.volumeCubo.toFixed(2);
+            document.getElementById('info-razao').textContent =
+                (dualidade.razao * 100).toFixed(2) + '%';
+        }
+
+        // ============================================================
+        // CONTROLES DA INTERFACE
+        // ============================================================
+        function reconstruirEsfera() {
+            const volume = parseFloat(document.getElementById('slider-volume').value);
+            const iteracoes = parseInt(document.getElementById('slider-iteracoes').value);
+
+            esferaAtual = new EsferaCubica(volume);
+            construirEsferaVisual(esferaAtual, iteracoes);
+        }
+
+        function alternarEixos() {
+            eixosVisiveis = !eixosVisiveis;
+            if (grupoEixos) {
+                grupoEixos.visible = eixosVisiveis;
+            }
+        }
+
+        document.getElementById('slider-volume').addEventListener('input', (e) => {
+            document.getElementById('valor-volume').textContent = e.target.value;
+        });
+
+        document.getElementById('slider-iteracoes').addEventListener('input', (e) => {
+            document.getElementById('valor-iteracoes').textContent = e.target.value;
+        });
+
+        document.getElementById('slider-volume').addEventListener('change', reconstruirEsfera);
+        document.getElementById('slider-iteracoes').addEventListener('change', reconstruirEsfera);
+
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
+        window.addEventListener('load', () => {
+            inicializarCena();
+            reconstruirEsfera();
+
+            // Em mobile, começa com painel oculto
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    togglePainel();
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>
+

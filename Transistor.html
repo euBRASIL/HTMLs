@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização Detalhada do Transistor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a2a 100%);
+            min-height: 100vh;
+            color: #e0e0ff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(100, 150, 255, 0.3);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2fff, #ff2f9b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #8888aa;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .visualization-panel {
+            background: rgba(20, 20, 50, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title::before {
+            content: '⚡';
+            font-size: 1.5rem;
+        }
+
+        .transistor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .transistor-detail {
+            width: 500px;
+            height: 400px;
+            background: linear-gradient(145deg, #1a1a3a, #2a2a5a);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .substrate {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(180deg, #2a3a5a 0%, #1a2a4a 100%);
+            border-radius: 0 0 20px 20px;
+        }
+
+        .substrate-label {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8888aa;
+            font-size: 0.9rem;
+        }
+
+        .source {
+            position: absolute;
+            top: 80px;
+            left: 80px;
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(180deg, #00d4ff 0%, #0066ff 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .source-label {
+            position: absolute;
+            top: 50px;
+            left: 80px;
+            color: #00d4ff;
+            font-size: 0.9rem;
+        }
+
+        .drain {
+            position: absolute;
+            top: 80px;
+            right: 80px;
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(180deg, #ff2f9b 0%, #ff6600 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px rgba(255, 47, 155, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .drain-label {
+            position: absolute;
+            top: 50px;
+            right: 80px;
+            color: #ff2f9b;
+            font-size: 0.9rem;
+        }
+
+        .gate {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 60px;
+            background: linear-gradient(180deg, #7b2fff 0%, #5a1fcc 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px rgba(123, 47, 255, 0.5);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .gate-label {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #7b2fff;
+            font-size: 0.9rem;
+        }
+
+        .gate-oxide {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 15px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .channel {
+            position: absolute;
+            top: 115px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 80px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 10px;
+            border: 2px dashed rgba(0, 212, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .channel.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: rgba(0, 212, 255, 0.8);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .electron {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #00ffff 0%, #0066ff 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 15px #00ffff, 0 0 30px #0066ff;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .electron.flow {
+            animation: electronFlow 1.5s infinite;
+        }
+
+        @keyframes electronFlow {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(0.5);
+            }
+            10% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            90% {
+                opacity: 1;
+                transform: translate(200px, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(200px, 0) scale(0.5);
+            }
+        }
+
+        .current-indicator {
+            position: absolute;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .current-flow {
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .current-flow.active {
+            opacity: 1;
+            animation: currentMove 0.5s infinite;
+        }
+
+        @keyframes currentMove {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(300%);
+            }
+        }
+
+        .voltage-meter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+            background: rgba(10, 10, 30, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+        }
+
+        .voltage-label {
+            color: #8888aa;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .voltage-bar {
+            height: 20px;
+            background: rgba(30, 30, 60, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .voltage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #7b2fff);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .voltage-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .state-indicator {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 25px;
+            background: rgba(30, 30, 60, 0.8);
+            border-radius: 20px;
+            border: 2px solid rgba(100, 150, 255, 0.3);
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .state-indicator.on {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+            color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .state-indicator.off {
+            background: rgba(255, 47, 155, 0.3);
+            border-color: #ff2f9b;
+            color: #ff2f9b;
+            box-shadow: 0 0 20px rgba(255, 47, 155, 0.5);
+        }
+
+        .transistor-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        .transistor-mini {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #1a1a3a, #2a2a5a);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(100, 150, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .transistor-mini:hover {
+            transform: scale(1.2);
+            border-color: rgba(0, 212, 255, 0.5);
+            z-index: 10;
+        }
+
+        .transistor-mini.active {
+            background: linear-gradient(145deg, #00d4ff, #0066ff);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+            border-color: rgba(0, 212, 255, 0.5);
+        }
+
+        .transistor-mini::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 20%;
+            width: 25%;
+            height: 40%;
+            background: rgba(0, 212, 255, 0.5);
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .transistor-mini.active::before {
+            opacity: 1;
+        }
+
+        .transistor-mini::after {
+            content: '';
+            position: absolute;
+            top: 30%;
+            right: 20%;
+            width: 25%;
+            height: 40%;
+            background: rgba(255, 47, 155, 0.5);
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .transistor-mini.active::after {
+            opacity: 1;
+        }
+
+        .info-panel {
+            background: rgba(20, 20, 50, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+
+        .clock-display {
+            background: linear-gradient(145deg, #1a1a3a, #2a2a5a);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 25px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .clock-time {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .clock-date {
+            color: #8888aa;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: rgba(30, 30, 60, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(100, 150, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #7b2fff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #8888aa;
+            font-size: 0.9rem;
+        }
+
+        .activity-log {
+            background: rgba(10, 10, 30, 0.8);
+            border-radius: 12px;
+            padding: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid rgba(100, 150, 255, 0.1);
+        }
+
+        .log-title {
+            color: #00d4ff;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(100, 150, 255, 0.2);
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(100, 150, 255, 0.1);
+            font-size: 0.85rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-time {
+            color: #7b2fff;
+            font-family: 'Courier New', monospace;
+            min-width: 70px;
+        }
+
+        .log-message {
+            color: #e0e0ff;
+            flex: 1;
+        }
+
+        .log-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00d4ff;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(145deg, #00d4ff, #0066ff);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(100, 150, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+
+        .explanation {
+            background: rgba(20, 20, 50, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            margin-top: 30px;
+        }
+
+        .explanation h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .explanation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .explanation-card {
+            background: rgba(30, 30, 60, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid #7b2fff;
+        }
+
+        .explanation-card h3 {
+            color: #7b2fff;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .explanation-card p {
+            color: #aaaacc;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .binary-display {
+            display: flex;
+            gap: 5px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .binary-bit {
+            width: 35px;
+            height: 45px;
+            background: rgba(30, 30, 60, 0.8);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 1.2rem;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .binary-bit.on {
+            background: linear-gradient(145deg, #00d4ff, #0066ff);
+            color: white;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .binary-bit.off {
+            color: #555577;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: rgba(10, 10, 30, 0.5);
+            border-radius: 3px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.5);
+        }
+
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .phase {
+            padding: 8px 20px;
+            background: rgba(30, 30, 60, 0.6);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .phase.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+            color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #8888aa;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-source {
+            background: linear-gradient(180deg, #00d4ff 0%, #0066ff 100%);
+        }
+
+        .legend-drain {
+            background: linear-gradient(180deg, #ff2f9b 0%, #ff6600 100%);
+        }
+
+        .legend-gate {
+            background: linear-gradient(180deg, #7b2fff 0%, #5a1fcc 100%);
+        }
+
+        .legend-electron {
+            background: radial-gradient(circle, #00ffff 0%, #0066ff 100%);
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 Visualização Detalhada do Transistor MOSFET</h1>
+            <p class="subtitle">Demonstração interativa do funcionamento de um transistor de efeito de campo com fluxo de elétrons</p>
+        </header>
+
+        <div class="main-content">
+            <div class="visualization-panel">
+                <h2 class="panel-title">Estrutura do Transistor</h2>
+                
+                <div class="transistor-container">
+                    <div class="transistor-detail" id="transistorDetail">
+                        <div class="gate-label">Porta (Gate)</div>
+                        <div class="gate" id="gate">GATE</div>
+                        
+                        <div class="gate-oxide"></div>
+                        
+                        <div class="source-label">Fonte (Source)</div>
+                        <div class="source" id="source">SOURCE</div>
+                        
+                        <div class="drain-label">Dreno (Drain)</div>
+                        <div class="drain" id="drain">DRAIN</div>
+                        
+                        <div class="channel" id="channel"></div>
+                        
+                        <div class="substrate"></div>
+                        <div class="substrate-label">Substrato (Substrate)</div>
+                        
+                        <div class="electrons-container" id="electronsContainer"></div>
+                        
+                        <div class="current-indicator">
+                            <div class="current-flow" id="currentFlow"></div>
+                        </div>
+                        
+                        <div class="state-indicator off" id="stateIndicator">DESLIGADO</div>
+                        
+                        <div class="voltage-meter">
+                            <div class="voltage-label">Tensão da Porta</div>
+                            <div class="voltage-bar">
+                                <div class="voltage-fill" id="voltageFill"></div>
+                                <div class="voltage-value" id="voltageValue">0V</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color legend-source"></div>
+                            <span>Fonte (elétrons)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-drain"></div>
+                            <span>Dreno (saída)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-gate"></div>
+                            <span>Porta (controle)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-electron"></div>
+                            <span>Elétron</span>
+                        </div>
+                    </div>
+
+                    <div class="phase-indicator">
+                        <div class="phase" id="phase1">1. Porta recebe tensão</div>
+                        <div class="phase" id="phase2">2. Canal se abre</div>
+                        <div class="phase" id="phase3">3. Corrente flui</div>
+                    </div>
+                </div>
+
+                <h2 class="panel-title" style="margin-top: 25px;">Matriz de Transistores (144 un.)</h2>
+                <div class="transistor-grid" id="transistorGrid"></div>
+
+                <h2 class="panel-title" style="margin-top: 25px;">Representação Binária do Tempo</h2>
+                <div class="binary-display" id="binaryDisplay"></div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="toggleAnimation()">⏯️ Pausar/Iniciar</button>
+                    <button class="btn btn-secondary" onclick="resetVisualization()">🔄 Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="changeSpeed()">⚡ Velocidade</button>
+                    <button class="btn btn-secondary" onclick="toggleManual()">🎮 Modo Manual</button>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="clock-display">
+                    <div class="clock-time" id="clockTime">00:00:00</div>
+                    <div class="clock-date" id="clockDate">Carregando...</div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeTransistors">0</div>
+                        <div class="stat-label">Transistores ativos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="switchesPerSec">0</div>
+                        <div class="stat-label">Chaveamentos/seg</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="dataProcessed">0</div>
+                        <div class="stat-label">Bits processados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="efficiency">0%</div>
+                        <div class="stat-label">Eficiência</div>
+                    </div>
+                </div>
+
+                <div class="activity-log scrollbar">
+                    <h3 class="log-title">📋 Registro de Atividade</h3>
+                    <div id="logEntries"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>📚 Como Funciona o Transistor MOSFET</h2>
+            <div class="explanation-grid">
+                <div class="explanation-card">
+                    <h3>⚡ Porta (Gate)</h3>
+                    <p>Eletrodo de controle. Ao aplicar tensão, cria um campo elétrico que abre o canal para a passagem dos elétrons.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>💧 Fonte (Source)</h3>
+                    <p>Origem dos elétrons. É de onde os elétrons iniciam seu movimento através do canal quando o transistor está ligado.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>🎯 Dreno (Drain)</h3>
+                    <p>Coletor de elétrons. Os elétrons atingem o dreno após atravessar o canal, gerando a corrente elétrica.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>🔌 Canal (Channel)</h3>
+                    <p>Região entre a fonte e o dreno. Abre-se com a tensão aplicada na porta, permitindo o fluxo de elétrons.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>🧱 Óxido da Porta</h3>
+                    <p>Camada isolante entre a porta e o canal. Impede a passagem direta de corrente pela porta, funcionando como um capacitor.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>📊 Substrato (Substrate)</h3>
+                    <p>Base do transistor. Normalmente aterrada, forma a estrutura de suporte para todos os componentes do transistor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isAnimating = true;
+        let animationSpeed = 300;
+        let totalSwitches = 0;
+        let totalBitsProcessed = 0;
+        let startTime = Date.now();
+        let transistors = [];
+        let animationId = null;
+        let manualMode = false;
+        let currentPhase = 0;
+        let electrons = [];
+
+        function initTransistors() {
+            const grid = document.getElementById('transistorGrid');
+            grid.innerHTML = '';
+            transistors = [];
+
+            for (let i = 0; i < 144; i++) {
+                const transistor = document.createElement('div');
+                transistor.className = 'transistor-mini';
+                transistor.id = 'transistor-' + i;
+                transistor.addEventListener('click', function() {
+                    if (manualMode) {
+                        toggleSingleTransistor(i);
+                    }
+                });
+                grid.appendChild(transistor);
+                transistors.push({
+                    element: transistor,
+                    state: false
+                });
+            }
+        }
+
+        function initBinaryDisplay() {
+            const display = document.getElementById('binaryDisplay');
+            display.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const bit = document.createElement('div');
+                bit.className = 'binary-bit off';
+                bit.id = 'bit-' + i;
+                bit.textContent = '0';
+                display.appendChild(bit);
+            }
+        }
+
+        function initElectrons() {
+            const container = document.getElementById('electronsContainer');
+            container.innerHTML = '';
+            electrons = [];
+
+            for (let i = 0; i < 8; i++) {
+                const electron = document.createElement('div');
+                electron.className = 'electron';
+                electron.id = 'electron-' + i;
+                electron.style.left = (80 + i * 25) + 'px';
+                electron.style.top = '120px';
+                container.appendChild(electron);
+                electrons.push(electron);
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR');
+            const dateStr = now.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            document.getElementById('clockTime').textContent = timeStr;
+            document.getElementById('clockDate').textContent = dateStr;
+
+            return now;
+        }
+
+        function updateTransistorDetail(isActive, voltage) {
+            const gate = document.getElementById('gate');
+            const channel = document.getElementById('channel');
+            const source = document.getElementById('source');
+            const drain = document.getElementById('drain');
+            const stateIndicator = document.getElementById('stateIndicator');
+            const voltageFill = document.getElementById('voltageFill');
+            const voltageValue = document.getElementById('voltageValue');
+            const currentFlow = document.getElementById('currentFlow');
+            const phase1 = document.getElementById('phase1');
+            const phase2 = document.getElementById('phase2');
+            const phase3 = document.getElementById('phase3');
+
+            voltageFill.style.width = voltage + '%';
+            voltageValue.textContent = (voltage * 0.05).toFixed(1) + 'V';
+
+            if (isActive) {
+                gate.style.boxShadow = '0 0 30px rgba(123, 47, 255, 0.8)';
+                channel.classList.add('active');
+                source.style.boxShadow = '0 0 30px rgba(0, 212, 255, 0.8)';
+                drain.style.boxShadow = '0 0 30px rgba(255, 47, 155, 0.8)';
+                stateIndicator.className = 'state-indicator on';
+                stateIndicator.textContent = 'LIGADO';
+                currentFlow.classList.add('active');
+
+                electrons.forEach(function(electron, index) {
+                    electron.classList.add('flow');
+                    electron.style.animationDelay = (index * 0.15) + 's';
+                });
+
+                phase1.classList.add('active');
+                phase2.classList.add('active');
+                phase3.classList.add('active');
+            } else {
+                gate.style.boxShadow = '0 0 20px rgba(123, 47, 255, 0.5)';
+                channel.classList.remove('active');
+                source.style.boxShadow = '0 0 20px rgba(0, 212, 255, 0.5)';
+                drain.style.boxShadow = '0 0 20px rgba(255, 47, 155, 0.5)';
+                stateIndicator.className = 'state-indicator off';
+                stateIndicator.textContent = 'DESLIGADO';
+                currentFlow.classList.remove('active');
+
+                electrons.forEach(function(electron) {
+                    electron.classList.remove('flow');
+                });
+
+                phase1.classList.remove('active');
+                phase2.classList.remove('active');
+                phase3.classList.remove('active');
+            }
+        }
+
+        function updateTransistors(time) {
+            const timeValue = time.getHours() * 3600 + time.getMinutes() * 60 + time.getSeconds();
+            const binaryString = timeValue.toString(2).padStart(16, '0');
+
+            let activeCount = 0;
+
+            for (let i = 0; i < transistors.length; i++) {
+                const transistor = transistors[i];
+                const bitIndex = i % 16;
+                const shouldBeActive = binaryString[bitIndex] === '1';
+                
+                if (shouldBeActive !== transistor.state) {
+                    transistor.state = shouldBeActive;
+                    if (shouldBeActive) {
+                        transistor.element.classList.add('active');
+                    } else {
+                        transistor.element.classList.remove('active');
+                    }
+                    totalSwitches++;
+                }
+
+                if (shouldBeActive) {
+                    totalBitsProcessed++;
+                    activeCount++;
+                }
+            }
+
+            const bits = document.querySelectorAll('.binary-bit');
+            for (let i = 0; i < bits.length; i++) {
+                const bit = bits[i];
+                const isOn = binaryString[i] === '1';
+                bit.className = 'binary-bit ' + (isOn ? 'on' : 'off');
+                bit.textContent = isOn ? '1' : '0';
+            }
+
+            const mainTransistorActive = activeCount > 0;
+            const voltage = mainTransistorActive ? 80 + Math.random() * 20 : Math.random() * 20;
+            updateTransistorDetail(mainTransistorActive, voltage);
+
+            return activeCount;
+        }
+
+        function updateStats(activeCount) {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const switchesPerSec = elapsed > 0 ? Math.round(totalSwitches / elapsed) : 0;
+            const efficiency = Math.min(100, Math.round((activeCount / 144) * 100));
+
+            document.getElementById('activeTransistors').textContent = activeCount;
+            document.getElementById('switchesPerSec').textContent = switchesPerSec.toLocaleString('pt-BR');
+            document.getElementById('dataProcessed').textContent = totalBitsProcessed.toLocaleString('pt-BR');
+            document.getElementById('efficiency').textContent = efficiency + '%';
+        }
+
+        function addLogEntry(message) {
+            const logEntries = document.getElementById('logEntries');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR');
+
+            entry.innerHTML = 
+                '<span class="log-time">' + timeStr + '</span>' +
+                '<span class="log-message">' + message + '</span>' +
+                '<span class="log-status"></span>';
+
+            if (logEntries.firstChild) {
+                logEntries.insertBefore(entry, logEntries.firstChild);
+            } else {
+                logEntries.appendChild(entry);
+            }
+
+            while (logEntries.children.length > 20) {
+                if (logEntries.lastChild) {
+                    logEntries.removeChild(logEntries.lastChild);
+                }
+            }
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+
+            const time = updateClock();
+            const activeCount = updateTransistors(time);
+            updateStats(activeCount);
+
+            if (Math.random() > 0.7) {
+                const messages = [
+                    'Porta recebendo tensão',
+                    'Canal se abrindo',
+                    'Elétrons fluindo da fonte para o dreno',
+                    'Transistor chaveando',
+                    'Processando dados binários',
+                    'Sincronizando sinal de clock'
+                ];
+                const randomIndex = Math.floor(Math.random() * messages.length);
+                addLogEntry(messages[randomIndex]);
+            }
+
+            animationId = setTimeout(animate, animationSpeed);
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            if (isAnimating) {
+                animate();
+                addLogEntry('Animação iniciada');
+            } else {
+                if (animationId) {
+                    clearTimeout(animationId);
+                }
+                addLogEntry('Animação pausada');
+            }
+        }
+
+        function resetVisualization() {
+            totalSwitches = 0;
+            totalBitsProcessed = 0;
+            startTime = Date.now();
+
+            for (let i = 0; i < transistors.length; i++) {
+                transistors[i].state = false;
+                transistors[i].element.classList.remove('active');
+            }
+
+            updateTransistorDetail(false, 0);
+            document.getElementById('logEntries').innerHTML = '';
+            addLogEntry('Visualização reiniciada');
+        }
+
+        function changeSpeed() {
+            const speeds = [500, 300, 150, 75];
+            let currentIndex = speeds.indexOf(animationSpeed);
+            if (currentIndex === -1) currentIndex = 0;
+            const nextIndex = (currentIndex + 1) % speeds.length;
+            animationSpeed = speeds[nextIndex];
+
+            const speedLabels = { 500: 'Muito lento', 300: 'Lento', 150: 'Normal', 75: 'Rápido' };
+            addLogEntry('Velocidade: ' + speedLabels[animationSpeed]);
+        }
+
+        function toggleManual() {
+            manualMode = !manualMode;
+            if (manualMode) {
+                isAnimating = false;
+                if (animationId) {
+                    clearTimeout(animationId);
+                }
+                addLogEntry('Modo manual ativado - clique nos transistores');
+            } else {
+                isAnimating = true;
+                animate();
+                addLogEntry('Modo automático ativado');
+            }
+        }
+
+        function toggleSingleTransistor(index) {
+            const transistor = transistors[index];
+            transistor.state = !transistor.state;
+            
+            if (transistor.state) {
+                transistor.element.classList.add('active');
+                totalSwitches++;
+                totalBitsProcessed++;
+                addLogEntry('Transistor #' + index + ' LIGADO');
+            } else {
+                transistor.element.classList.remove('active');
+                addLogEntry('Transistor #' + index + ' DESLIGADO');
+            }
+
+            let activeCount = 0;
+            for (let i = 0; i < transistors.length; i++) {
+                if (transistors[i].state) {
+                    activeCount++;
+                }
+            }
+
+            const voltage = transistor.state ? 80 + Math.random() * 20 : Math.random() * 20;
+            updateTransistorDetail(transistor.state, voltage);
+            updateStats(activeCount);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initTransistors();
+            initBinaryDisplay();
+            initElectrons();
+            addLogEntry('Sistema inicializado');
+            addLogEntry('Iniciando visualização...');
+            updateTransistorDetail(false, 0);
+            animate();
+        });
+    </script>
+</body>
+</html>
+

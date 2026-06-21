@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osciloscópio - Decompor Circular</title>
+<style>
+body {
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 10vh;
+    background-color: #1e1e24;
+    margin: 475px;
+    color: fff;
+}
+
+.oscilloscope {
+    background-color: #2b2b2b;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    border: 1px solid #444;
+}
+
+canvas {
+    background-color: #0a0a0a;
+    display: block;
+    border: 2px solid #555;
+    border-radius: 20px;
+}
+
+.controls {
+    margin-top: 25px;
+    display: flex;
+    gap: 50px;
+    justify-content: center;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #00ff00;
+    text-transform: uppercase;
+    letter-spacing: 10px;
+}
+
+input[type="range"] {
+    width: 170px;
+    accent-color: #00ff00;
+}
+
+.value-display {
+    margin-top: 50px;
+    font-size: 19px;
+    color: #ccc;
+}
+</style>
+</head>
+<body>
+    <div class="oscilloscope">
+        <canvas id="oscilloscopeCanvas" width="1000" height="500"></canvas>
+        <div class="controls">
+            <div class="control-group">
+                <label for="frequency">Frequência</label>
+                <input type="range" id="frequency" min="1" max="10" value="3" step="0.1">
+                <div class="value-display" id="freq-val">3.0 Hz</div>
+            </div>
+            <div class="control-group">
+                <label for="amplitude">Amplitude</label>
+                <input type="range" id="amplitude" min="10" max="100" value="80">
+                <div class="value-display" id="amp-val">80%</div>
+            </div>
+            <div class="control-group">
+                <label for="speed">Velocidade</label>
+                <input type="range" id="speed" min="1" max="10" value="5">
+                <div class="value-display" id="speed-val">5x</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('oscilloscopeCanvas');
+const ctx = canvas.getContext('2d');
+const frequencyInput = document.getElementById('frequency');
+const amplitudeInput = document.getElementById('amplitude');
+const speedInput = document.getElementById('speed');
+const freqValDisplay = document.getElementById('freq-val');
+const ampValDisplay = document.getElementById('amp-val');
+const speedValDisplay = document.getElementById('speed-val');
+
+let frequency = parseFloat(frequencyInput.value);
+let amplitude = parseFloat(amplitudeInput.value);
+let speed = parseFloat(speedInput.value);
+let angle = 0; // Ângulo atual do ponto no círculo (em radianos)
+let waveHistory = []; // Histórico dos pontos da onda
+
+// Configurações da circunferência
+const CIRCLE_SEGMENTS = 400; // 400 ângulos
+const ANGLE_STEP = 0.9 * (Math.PI / 180); // 0.9 graus em radianos
+
+function resizeCanvas() {
+    const maxWidth = Math.min(window.innerWidth - 80, 1000);
+    canvas.width = maxWidth;
+    canvas.height = maxWidth * 0.45;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+frequencyInput.addEventListener('input', (e) => {
+    frequency = parseFloat(e.target.value);
+    freqValDisplay.textContent = frequency.toFixed(1) + ' Hz';
+});
+
+amplitudeInput.addEventListener('input', (e) => {
+    amplitude = parseFloat(e.target.value);
+    ampValDisplay.textContent = amplitude + '%';
+});
+
+speedInput.addEventListener('input', (e) => {
+    speed = parseFloat(e.target.value);
+    speedValDisplay.textContent = speed + 'x';
+});
+
+function drawGrid() {
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    ctx.strokeStyle = '#1a331a';
+    ctx.lineWidth = 1;
+
+    // Linhas verticais
+    for (let x = 0; x <= width; x += width / 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+
+    // Linhas horizontais
+    for (let y = 0; y <= height; y += height / 10) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+}
+
+function drawCircle() {
+    const height = canvas.height;
+    const centerY = height / 2;
+    const circleX = 175; // Posição X do centro do círculo
+    const radius = (height / 2 - 40) * (amplitude / 100);
+
+    // Desenha a circunferência
+    ctx.beginPath();
+    ctx.arc(circleX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#006600';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Desenha os 400 pontos de 0.9 graus
+    ctx.fillStyle = '#003300';
+    for (let i = 0; i < CIRCLE_SEGMENTS; i++) {
+        const a = i * ANGLE_STEP;
+        const x = circleX + radius * Math.cos(a);
+        const y = centerY - radius * Math.sin(a);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
+    // Desenha o ponto atual (girando)
+    const currentX = circleX + radius * Math.cos(angle);
+    const currentY = centerY - radius * Math.sin(angle);
+
+    // Linha do centro ao ponto
+    ctx.beginPath();
+    ctx.moveTo(circleX, centerY);
+    ctx.lineTo(currentX, currentY);
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Ponto atual (brilhante)
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = '#00ff00';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00ff00';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Linha horizontal conectando o ponto à onda
+    ctx.beginPath();
+    ctx.moveTo(currentX, currentY);
+    ctx.lineTo(circleX + radius + 50, currentY);
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    return { currentY, waveStartX: circleX + radius + 50 };
+}
+
+function drawWave(waveStartX, currentY) {
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerY = height / 2;
+    const radius = (height / 2 - 40) * (amplitude / 100);
+
+    // Adiciona o ponto atual ao histórico
+    waveHistory.unshift(currentY);
+    
+    // Limita o histórico ao tamanho disponível
+    const maxHistory = width - waveStartX - 20;
+    if (waveHistory.length > maxHistory) {
+        waveHistory = waveHistory.slice(0, maxHistory);
+    }
+
+    // Desenha a onda
+    ctx.beginPath();
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#00ff00';
+
+    for (let i = 0; i < waveHistory.length; i++) {
+        const x = waveStartX + i;
+        const y = waveHistory[i];
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Eixo central da onda
+    ctx.beginPath();
+    ctx.moveTo(waveStartX, centerY);
+    ctx.lineTo(width - 20, centerY);
+    ctx.strokeStyle = '#2d5a2d';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
+
+function drawAngleInfo() {
+    const height = canvas.height;
+    const angleDeg = (angle * 180 / Math.PI) % 360;
+    const segmentIndex = Math.floor(angleDeg / 0.9);
+    
+    ctx.fillStyle = '#00ff00';
+    ctx.font = '19px Courier New';
+    ctx.fillText(`Ângulo: ${angleDeg.toFixed(1)}°`, 50, 30);
+    ctx.fillText(`Segmento: ${segmentIndex}/400`, 315, 30);
+    ctx.fillText(`Passo: 0.9°`, 724, 30);
+}
+
+function animate() {
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+    drawGrid();
+    
+    const { currentY, waveStartX } = drawCircle();
+    drawWave(waveStartX, currentY);
+    drawAngleInfo();
+
+    // Avança o ângulo baseado na frequência e velocidade
+    angle += (frequency * speed * 0.02);
+    
+    // Mantém o ângulo entre 0 e 2π
+    if (angle >= 2 * Math.PI) {
+        angle -= 2 * Math.PI;
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
+

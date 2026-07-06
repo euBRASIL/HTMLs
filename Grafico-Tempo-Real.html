@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Gráfico em tempo real de ZILUSDT</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="myChart"></canvas>
+    <script src="script.js"></script>
+</body>
+<script>
+const endpoint = 'wss://stream.binance.com:9443/ws/zilusdt@ticker';
+const chart = new Chart(document.getElementById('myChart'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Preço de ZILUSDT',
+            data: [],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            fill: false
+        }]
+    },
+    options: {
+        responsive: true,
+        title: {
+            display: true,
+            text: 'Gráfico em tempo real de ZILUSDT'
+        },
+        scales: {
+            xAxes: [{
+                type: 'time',
+                display: true,
+                time: {
+                    displayFormats: {
+                        minute: 'h:mm:ss a'
+                    }
+                }
+            }],
+            yAxes: [{
+                display: true,
+                ticks: {
+                    beginAtZero: false
+                }
+            }]
+        }
+    }
+});
+
+const ws = new WebSocket(endpoint);
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    const time = new Date(data.E);
+    const price = data.c;
+
+    chart.data.labels.push(time);
+    chart.data.datasets[0].data.push(price);
+    chart.update();
+};
+
+</script>
+</html>

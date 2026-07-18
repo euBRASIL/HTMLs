@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TGSF-36 — Topological Graph Scalar Field</title>
+<style>
+  /* ============================================================
+     TGSF-36 — Topological Graph Scalar Field v2.0
+     Framework de Representação Topológica para SECP256k1
+     ============================================================ */
+  :root{
+    --bg-0:#06080f;
+    --bg-1:#0b1020;
+    --bg-2:#11182b;
+    --bg-3:#182138;
+    --line:#1f2a44;
+    --line-2:#2a3a5e;
+    --text:#e6ecf5;
+    --text-dim:#8893ad;
+    --text-mute:#5b6680;
+    --cyan:#00d9ff;
+    --magenta:#ff3ea5;
+    --yellow:#ffcb3d;
+    --green:#35e39a;
+    --violet:#a97bff;
+    --orange:#ff8a3d;
+    --red:#ff5470;
+    --mono:'JetBrains Mono','Fira Code',Consolas,Monaco,monospace;
+    --sans:'Inter','Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--text);font-family:var(--sans);font-size:13px;overflow-x:hidden}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(0,217,255,.06), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(255,62,165,.05), transparent 60%),
+      radial-gradient(700px 400px at 50% 120%, rgba(169,123,255,.05), transparent 60%),
+      var(--bg-0);
+    min-height:100vh;
+  }
+  header{
+    padding:18px 24px 10px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    background:linear-gradient(180deg,rgba(11,16,32,.9),rgba(11,16,32,.5));
+    backdrop-filter:blur(6px);
+    position:sticky;top:0;z-index:10;
+  }
+  .title{display:flex;align-items:center;gap:14px}
+  .logo{
+    width:42px;height:42px;border-radius:10px;
+    background:conic-gradient(from 0deg,var(--cyan),var(--violet),var(--magenta),var(--cyan));
+    position:relative;display:grid;place-items:center;
+    box-shadow:0 0 24px rgba(0,217,255,.25);
+  }
+  .logo::after{
+    content:"";position:absolute;inset:3px;border-radius:8px;background:var(--bg-1);
+  }
+  .logo span{position:relative;font-family:var(--mono);font-weight:700;color:var(--cyan);font-size:11px;letter-spacing:.5px}
+  h1{font-size:18px;margin:0;letter-spacing:.3px;font-weight:600}
+  h1 small{display:block;font-size:11px;color:var(--text-dim);font-weight:400;letter-spacing:.4px;margin-top:2px}
+  .tag{font-family:var(--mono);font-size:10px;color:var(--text-mute);padding:3px 8px;border:1px solid var(--line-2);border-radius:999px;letter-spacing:.5px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  button,input,select{
+    font-family:var(--mono);font-size:12px;color:var(--text);
+    background:var(--bg-2);border:1px solid var(--line-2);border-radius:8px;
+    padding:8px 12px;outline:none;transition:all .15s ease;
+  }
+  button{cursor:pointer;background:linear-gradient(180deg,var(--bg-3),var(--bg-2))}
+  button:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px rgba(0,217,255,.2)}
+  button.primary{background:linear-gradient(180deg,rgba(0,217,255,.15),rgba(0,217,255,.05));border-color:rgba(0,217,255,.5);color:var(--cyan)}
+  button.primary:hover{background:linear-gradient(180deg,rgba(0,217,255,.25),rgba(0,217,255,.1))}
+  input[type=text],input[type=number]{min-width:240px}
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,217,255,.15)}
+  .status{font-family:var(--mono);font-size:11px;color:var(--text-dim);padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg-1)}
+  .status.ok{color:var(--green);border-color:rgba(53,227,154,.3)}
+  .status.err{color:var(--red);border-color:rgba(255,84,112,.3)}
+  main{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:14px;padding:16px;
+  }
+  .panel{
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    border:1px solid var(--line);border-radius:12px;
+    padding:12px;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;min-height:0;
+  }
+  .panel::before{
+    content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 40%);
+  }
+  .panel h3{
+    margin:0 0 10px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--text-dim);font-weight:600;display:flex;align-items:center;gap:8px;
+  }
+  .panel h3 .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .panel canvas{display:block;width:100%;height:100%}
+  .span-3{grid-column:span 3}
+  .span-4{grid-column:span 4}
+  .span-6{grid-column:span 6}
+  .span-8{grid-column:span 8}
+  .span-12{grid-column:span 12}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .kv{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:11px;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .kv:last-child{border-bottom:none}
+  .kv .k{color:var(--text-dim)}
+  .kv .v{color:var(--text);word-break:break-all;text-align:right}
+  .mono{font-family:var(--mono)}
+  .small{font-size:10px;color:var(--text-mute);font-family:var(--mono);letter-spacing:.5px}
+  .bits{
+    display:grid;grid-template-columns:repeat(32,1fr);gap:2px;font-family:var(--mono);font-size:9px;
+  }
+  .bits div{
+    aspect-ratio:1;display:grid;place-items:center;border-radius:3px;
+    background:var(--bg-3);color:var(--text-mute);border:1px solid var(--line);
+    transition:all .2s;
+  }
+  .bits div.on{background:linear-gradient(180deg,rgba(0,217,255,.25),rgba(0,217,255,.08));color:var(--cyan);border-color:rgba(0,217,255,.5);box-shadow:0 0 6px rgba(0,217,255,.25)}
+  .bits div.qy.on{background:linear-gradient(180deg,rgba(255,62,165,.25),rgba(255,62,165,.08));color:var(--magenta);border-color:rgba(255,62,165,.5);box-shadow:0 0 6px rgba(255,62,165,.25)}
+  .microgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .micro{
+    aspect-ratio:1;background:var(--bg-3);border:1px solid var(--line);border-radius:6px;
+    position:relative;overflow:hidden;cursor:pointer;transition:all .15s;
+  }
+  .micro:hover{border-color:var(--cyan);transform:translateY(-1px)}
+  .micro canvas{width:100%;height:100%}
+  .micro .idx{position:absolute;top:2px;left:4px;font-family:var(--mono);font-size:8px;color:var(--text-mute);opacity:.7}
+  .micro .val{position:absolute;bottom:2px;right:4px;font-family:var(--mono);font-size:8px;color:var(--cyan);opacity:.8}
+  .slider-row{display:grid;grid-template-columns:40px 1fr 50px;gap:8px;align-items:center;font-family:var(--mono);font-size:10px}
+  .slider-row label{color:var(--text-dim)}
+  .slider-row input[type=range]{flex:1;width:100%}
+  .slider-row .num{color:var(--cyan);text-align:right}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;height:4px;background:var(--bg-3);border-radius:2px;outline:none;border:1px solid var(--line);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;
+    background:var(--cyan);cursor:pointer;box-shadow:0 0 8px rgba(0,217,255,.5);border:2px solid var(--bg-1);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:14px;height:14px;border-radius:50%;background:var(--cyan);cursor:pointer;border:2px solid var(--bg-1);
+  }
+  .weights-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;max-height:320px;overflow-y:auto;padding-right:4px}
+  .weights-grid::-webkit-scrollbar{width:6px}
+  .weights-grid::-webkit-scrollbar-track{background:var(--bg-1)}
+  .weights-grid::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+  .stat-big{font-family:var(--mono);font-size:22px;color:var(--cyan);font-weight:600;line-height:1}
+  .stat-label{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .stat-box{padding:10px;background:var(--bg-3);border-radius:8px;border:1px solid var(--line)}
+  .tabs{display:flex;gap:4px;margin-bottom:8px}
+  .tab{padding:5px 10px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--text-dim);font-family:var(--mono)}
+  .tab.active{color:var(--cyan);border-color:rgba(0,217,255,.5);background:rgba(0,217,255,.08)}
+  .legend{display:flex;gap:12px;font-size:10px;color:var(--text-dim);font-family:var(--mono);flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:4px}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+  footer{padding:14px 24px;border-top:1px solid var(--line);text-align:center;color:var(--text-mute);font-size:10px;font-family:var(--mono);letter-spacing:.5px}
+  .coord-box{font-family:var(--mono);font-size:10px;color:var(--text);word-break:break-all;background:var(--bg-3);padding:8px;border-radius:6px;border:1px solid var(--line);max-height:80px;overflow-y:auto;line-height:1.5}
+  .coord-box::-webkit-scrollbar{width:4px}
+  .coord-box::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:2px}
+  @media (max-width:1100px){
+    .span-3,.span-4,.span-6,.span-8{grid-column:span 12}
+  }
+  @keyframes pulse{0%,100%{opacity:.8}50%{opacity:1}}
+  .pulse{animation:pulse 2s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">
+    <div class="logo"><span>T36</span></div>
+    <div>
+      <h1>TGSF-36 <small>Topological Graph Scalar Field · Framework de Representação Topológica para SECP256k1</small></h1>
+    </div>
+    <span class="tag">v2.0 · pt-BR · 2026</span>
+  </div>
+  <div class="controls">
+    <input type="text" id="scalarInput" placeholder="Chave privada (decimal ou 0xhex)" />
+    <button class="primary" id="btnCalc">▶ Calcular</button>
+    <button id="btnExample">Exemplo</button>
+    <button id="btnRandom">Aleatório</button>
+    <button id="btnClear">Limpar</button>
+    <span class="status" id="status">Aguardando entrada…</span>
+  </div>
+</header>
+
+<main>
+  <!-- ============ COORDENADAS ============ -->
+  <section class="panel span-4">
+    <h3><span class="dot"></span>Chave Privada · k</h3>
+    <div class="kv"><span class="k">Decimal</span><span class="v mono" id="kDec">—</span></div>
+    <div class="kv"><span class="k">Hexadecimal</span><span class="v mono" id="kHex">—</span></div>
+    <div class="kv"><span class="k">Bits</span><span class="v mono" id="kBits">—</span></div>
+    <div class="kv"><span class="k">Validade</span><span class="v mono" id="kValid">—</span></div>
+  </section>
+
+  <section class="panel span-4">
+    <h3><span class="dot" style="background:var(--cyan);box-shadow:0 0 8px var(--cyan)"></span>Coordenada Qx</h3>
+    <div class="coord-box mono" id="qxBox">—</div>
+    <div style="height:8px"></div>
+    <div class="kv"><span class="k">Paridade</span><span class="v mono" id="qxParity">—</span></div>
+    <div class="kv"><span class="k">Bits ativos</span><span class="v mono" id="qxOnes">—</span></div>
+  </section>
+
+  <section class="panel span-4">
+    <h3><span class="dot" style="background:var(--magenta);box-shadow:0 0 8px var(--magenta)"></span>Coordenada Qy</h3>
+    <div class="coord-box mono" id="qyBox">—</div>
+    <div style="height:8px"></div>
+    <div class="kv"><span class="k">Paridade</span><span class="v mono" id="qyParity">—</span></div>
+    <div class="kv"><span class="k">Bits ativos</span><span class="v mono" id="qyOnes">—</span></div>
+  </section>
+
+  <!-- ============ BITS ============ -->
+  <section class="panel span-6">
+    <h3><span class="dot"></span>Vetor Binário 256 bits · Qx (topo) / Qy (base)</h3>
+    <div class="small" style="margin-bottom:6px">MSB → LSB · 36 regiões de 7 bits + 4 bits residuais</div>
+    <div class="bits" id="bitsQx"></div>
+    <div style="height:4px"></div>
+    <div class="bits" id="bitsQy"></div>
+    <div class="legend" style="margin-top:8px">
+      <span><i style="background:var(--cyan)"></i>Qx ativo</span>
+      <span><i style="background:var(--magenta)"></i>Qy ativo</span>
+      <span><i style="background:var(--bg-3);border:1px solid var(--line)"></i>Bit 0</span>
+    </div>
+  </section>
+
+  <!-- ============ SIGMOIDE ============ -->
+  <section class="panel span-6">
+    <h3><span class="dot" style="background:var(--yellow);box-shadow:0 0 8px var(--yellow)"></span>Função Sigmoide · S(x) = 1/(1+e^(-k(x-c)))</h3>
+    <div class="row" style="margin-bottom:6px">
+      <div class="slider-row" style="flex:1;grid-template-columns:20px 1fr 50px">
+        <label>k</label>
+        <input type="range" id="sigK" min="0.5" max="20" step="0.1" value="6">
+        <span class="num" id="sigKVal">6.0</span>
+      </div>
+      <div class="slider-row" style="flex:1;grid-template-columns:20px 1fr 50px">
+        <label>c</label>
+        <input type="range" id="sigC" min="0" max="1" step="0.01" value="0.5">
+        <span class="num" id="sigCVal">0.50</span>
+      </div>
+    </div>
+    <canvas id="cvSig" width="600" height="220"></canvas>
+  </section>
+
+  <!-- ============ 36 MICROGRAFOS ============ -->
+  <section class="panel span-6">
+    <h3><span class="dot"></span>36 Micrografos Ponderados · 7 arestas independentes</h3>
+    <div class="small" style="margin-bottom:6px">Cada micrografo = 7 bits · 128 estados · Energia E<sub>i</sub> = W<sub>i</sub> · S(x<sub>i</sub>)</div>
+    <div class="microgrid" id="microGrid"></div>
+  </section>
+
+  <!-- ============ GRAFO GLOBAL ============ -->
+  <section class="panel span-6">
+    <h3><span class="dot" style="background:var(--violet);box-shadow:0 0 8px var(--violet)"></span>Grafo Global 6×6 · Adjacência Ortogonal</h3>
+    <div class="tabs">
+      <div class="tab active" data-view="graph">Grafo</div>
+      <div class="tab" data-view="heatmap">Heat Map</div>
+      <div class="tab" data-view="field">Campo Vetorial</div>
+    </div>
+    <canvas id="cvGraph" width="600" height="420"></canvas>
+  </section>
+
+  <!-- ============ RADAR ============ -->
+  <section class="panel span-4">
+    <h3><span class="dot" style="background:var(--green);box-shadow:0 0 8px var(--green)"></span>Assinatura Radar 36D</h3>
+    <canvas id="cvRadar" width="400" height="360"></canvas>
+  </section>
+
+  <!-- ============ SUPERFICIE 3D ============ -->
+  <section class="panel span-4">
+    <h3><span class="dot" style="background:var(--orange);box-shadow:0 0 8px var(--orange)"></span>Superfície Topológica 3D</h3>
+    <div class="small" style="margin-bottom:4px">Arraste para rotacionar · Escala controla amplitude</div>
+    <div class="slider-row" style="grid-template-columns:50px 1fr 50px">
+      <label>Escala</label>
+      <input type="range" id="surfScale" min="0.2" max="3" step="0.05" value="1">
+      <span class="num" id="surfScaleVal">1.0</span>
+    </div>
+    <canvas id="cvSurf" width="400" height="320"></canvas>
+  </section>
+
+  <!-- ============ PESOS ============ -->
+  <section class="panel span-4">
+    <h3><span class="dot"></span>Pesos Configuráveis · W<sub>01</sub>…W<sub>36</sub></h3>
+    <div class="row" style="margin-bottom:6px">
+      <button id="btnWUniform">Uniforme</button>
+      <button id="btnWRamp">Rampa</button>
+      <button id="btnWRandom">Aleatório</button>
+      <button id="btnWCenter">Central</button>
+    </div>
+    <div class="weights-grid" id="weightsGrid"></div>
+  </section>
+
+  <!-- ============ ESTATISTICAS ============ -->
+  <section class="panel span-6">
+    <h3><span class="dot"></span>Métricas Topológicas · Análise Espectral</h3>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-big" id="mEnergy">—</div><div class="stat-label">Energia Total ΣE<sub>i</sub></div></div>
+      <div class="stat-box"><div class="stat-big" id="mAvg">—</div><div class="stat-label">Energia Média</div></div>
+      <div class="stat-box"><div class="stat-big" id="mVar">—</div><div class="stat-label">Variância</div></div>
+      <div class="stat-box"><div class="stat-big" id="mEntropy">—</div><div class="stat-label">Entropia de Shannon</div></div>
+      <div class="stat-box"><div class="stat-big" id="mSpecRad">—</div><div class="stat-label">Raio Espectral ρ(L)</div></div>
+      <div class="stat-box"><div class="stat-big" id="mHamming">—</div><div class="stat-label">Hamming Qx⊕Qy</div></div>
+      <div class="stat-box"><div class="stat-big" id="mConn">—</div><div class="stat-label">Conectividade Alg.</div></div>
+      <div class="stat-box"><div class="stat-big" id="mMass">—</div><div class="stat-label">Centro de Massa (x,y)</div></div>
+    </div>
+  </section>
+
+  <!-- ============ AUTOVALORES ============ -->
+  <section class="panel span-6">
+    <h3><span class="dot" style="background:var(--violet);box-shadow:0 0 8px var(--violet)"></span>Espectro do Laplaciano · 36 Autovalores</h3>
+    <canvas id="cvSpec" width="600" height="220"></canvas>
+    <div class="small" style="margin-top:6px">λ<sub>0</sub>=0 (grafo conexo) · λ<sub>1</sub> = conectividade algébrica · λ<sub>35</sub> = raio espectral</div>
+  </section>
+
+  <!-- ============ DEBUG ============ -->
+  <section class="panel span-12">
+    <h3><span class="dot"></span>Vetor de Características 36D · Feature Vector</h3>
+    <div class="mono small" id="featureVec" style="line-height:1.6;color:var(--text-dim);word-break:break-all"></div>
+  </section>
+</main>
+
+<footer>
+  TGSF-36 · Framework de Representação Topológica · A multiplicação escalar Q = k×G permanece matematicamente idêntica à SECP256k1 · Nenhuma propriedade criptográfica é alterada · v2.0 · 2026
+</footer>
+
+<script>
+/* ==================================================================
+   TGSF-36 — Topological Graph Scalar Field
+   Arquitetura modular em JavaScript puro (ES2020+ com BigInt)
+   Camadas:
+     [1] SECP256k1      — aritmética de curva elíptica (BigInt)
+     [2] BitMapper      — 256 bits → 36 regiões de 7 bits
+     [3] Sigmoid        — normalização não-linear
+     [4] TopoField      — construção do campo topológico
+     [5] Spectral       — Laplaciano e autovalores (Jacobi)
+     [6] Renderers      — Canvas 2D para cada visualização
+     [7] UI Controller  — eventos e estado global
+   ================================================================== */
+
+/* ==================================================================
+   [1] SECP256k1 — Aritmética Modular e Multiplicação Escalar
+   Curva: y² = x³ + 7 (mod p)
+   ================================================================== */
+const SECP = Object.freeze({
+  p: BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"),
+  n: BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"),
+  Gx:BigInt("0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"),
+  Gy:BigInt("0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8"),
+  a: 0n,
+  b: 7n
+});
+
+// Inverso modular via algoritmo euclidiano estendido
+function modInv(a, m){
+  a = ((a % m) + m) % m;
+  let [old_r, r] = [a, m];
+  let [old_s, s] = [1n, 0n];
+  while (r !== 0n){
+    const q = old_r / r;
+    [old_r, r] = [r, old_r - q * r];
+    [old_s, s] = [s, old_s - q * s];
+  }
+  if (old_r !== 1n) throw new Error("Inverso não existe");
+  return ((old_s % m) + m) % m;
+}
+
+// Adição de pontos na curva
+function pointAdd(P1, P2){
+  if (!P1) return P2;
+  if (!P2) return P1;
+  const [x1,y1] = P1, [x2,y2] = P2;
+  if (x1 === x2){
+    if (((y1 + y2) % SECP.p + SECP.p) % SECP.p === 0n) return null; // ponto no infinito
+    return pointDouble(P1);
+  }
+  const m = ((y2 - y1) * modInv(x2 - x1, SECP.p) % SECP.p + SECP.p) % SECP.p;
+  const x3 = ((m*m - x1 - x2) % SECP.p + SECP.p) % SECP.p;
+  const y3 = ((m*(x1 - x3) - y1) % SECP.p + SECP.p) % SECP.p;
+  return [x3, y3];
+}
+
+// Duplicação de ponto
+function pointDouble(P){
+  if (!P) return null;
+  const [x,y] = P;
+  if (y === 0n) return null;
+  const m = ((3n*x*x + SECP.a) * modInv(2n*y, SECP.p) % SECP.p + SECP.p) % SECP.p;
+  const x3 = ((m*m - 2n*x) % SECP.p + SECP.p) % SECP.p;
+  const y3 = ((m*(x - x3) - y) % SECP.p + SECP.p) % SECP.p;
+  return [x3, y3];
+}
+
+// Multiplicação escalar Q = k × G (double-and-add)
+function scalarMult(k, P){
+  if (k === 0n) return null;
+  k = ((k % SECP.n) + SECP.n) % SECP.n;
+  let R = null;
+  let addend = P;
+  while (k > 0n){
+    if (k & 1n) R = pointAdd(R, addend);
+    addend = pointDouble(addend);
+    k >>= 1n;
+  }
+  return R;
+}
+
+// Converte BigInt para string binária de 256 bits (zero-padded)
+function bigintToBin256(x){
+  let s = x.toString(2);
+  return s.padStart(256, '0');
+}
+function bigintToHex(x){
+  return x.toString(16).padStart(64,'0');
+}
+
+/* ==================================================================
+   [2] BitMapper — Compressão estrutural 256 bits → 36 regiões
+   36 × 7 = 252 bits + 4 bits residuais (metadados)
+   ================================================================== */
+const NUM_MICRO = 36;
+const BITS_PER_MICRO = 7;
+const REMAINING_BITS = 256 - NUM_MICRO * BITS_PER_MICRO; // 4
+
+// Estratégia: intercala Qx e Qy para capturar correlações cruzadas
+// Regiões 0..17: Qx (18 regiões × 7 bits = 126 bits) + 2 bits residuais
+// Regiões 18..35: Qy (18 regiões × 7 bits = 126 bits) + 2 bits residuais
+// Total: 252 bits + 4 residuais = 256
+function mapBitsToMicrographs(binQx, binQy){
+  const regions = new Array(NUM_MICRO);
+  // Qx: primeiros 126 bits (MSB) → 18 regiões
+  for (let i = 0; i < 18; i++){
+    const slice = binQx.substr(i*7, 7);
+    regions[i] = { bits: slice, source:'Qx', index:i, value:parseInt(slice,2) };
+  }
+  // Qy: próximos 126 bits → 18 regiões
+  for (let i = 0; i < 18; i++){
+    const slice = binQy.substr(i*7, 7);
+    regions[18+i] = { bits: slice, source:'Qy', index:18+i, value:parseInt(slice,2) };
+  }
+  return { regions, residualQx: binQx.substr(126,2), residualQy: binQy.substr(126,2) };
+}
+
+/* ==================================================================
+   [3] Sigmoid — S(x) = 1 / (1 + exp(-k*(x-c)))
+   ================================================================== */
+function sigmoid(x, k, c){
+  return 1 / (1 + Math.exp(-k * (x - c)));
+}
+
+/* ==================================================================
+   [4] TopoField — Construção do campo topológico
+   ================================================================== */
+class TopoField{
+  constructor(){
+    this.weights = new Array(NUM_MICRO).fill(1);
+    this.sigK = 6;
+    this.sigC = 0.5;
+    this.energies = new Array(NUM_MICRO).fill(0);
+    this.normalized = new Array(NUM_MICRO).fill(0);
+    this.micrographs = new Array(NUM_MICRO).fill(null);
+  }
+  compute(mapped){
+    // Normalização linear dos valores (0..127) → (0..1)
+    for (let i = 0; i < NUM_MICRO; i++){
+      this.normalized[i] = mapped.regions[i].value / 127;
+    }
+    // Aplica sigmoide e peso
+    for (let i = 0; i < NUM_MICRO; i++){
+      const s = sigmoid(this.normalized[i], this.sigK, this.sigC);
+      this.energies[i] = this.weights[i] * s;
+    }
+    // Constrói micrografos (7 arestas a partir dos 7 bits)
+    this.micrographs = mapped.regions.map((r,i) => ({
+      index: i,
+      bits: r.bits.split('').map(Number),
+      source: r.source,
+      value: r.value,
+      energy: this.energies[i],
+      normalized: this.normalized[i]
+    }));
+    return this;
+  }
+  totalEnergy(){ return this.energies.reduce((a,b)=>a+b,0); }
+  avgEnergy(){ return this.totalEnergy()/NUM_MICRO; }
+  variance(){
+    const m = this.avgEnergy();
+    return this.energies.reduce((a,e)=>a+(e-m)*(e-m),0)/NUM_MICRO;
+  }
+  entropy(){
+    const t = this.totalEnergy();
+    if (t === 0) return 0;
+    let H = 0;
+    for (const e of this.energies){
+      const p = e/t;
+      if (p > 0) H -= p * Math.log2(p);
+    }
+    return H;
+  }
+  // Centro de massa ponderado no grid 6x6
+  centerOfMass(){
+    let sx=0, sy=0, sw=0;
+    for (let i = 0; i < NUM_MICRO; i++){
+      const row = Math.floor(i/6), col = i%6;
+      const w = this.energies[i];
+      sx += col*w; sy += row*w; sw += w;
+    }
+    return sw>0 ? [sx/sw, sy/sw] : [2.5, 2.5];
+  }
+  // Matriz de adjacência do grafo global 6x6 (ortogonal)
+  adjacencyMatrix(){
+    const A = Array.from({length:NUM_MICRO},()=>new Array(NUM_MICRO).fill(0));
+    for (let i = 0; i < NUM_MICRO; i++){
+      const r = Math.floor(i/6), c = i%6;
+      const neigh = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+      for (const [nr,nc] of neigh){
+        if (nr>=0 && nr<6 && nc>=0 && nc<6){
+          const j = nr*6+nc;
+          A[i][j] = 1;
+        }
+      }
+    }
+    return A;
+  }
+  // Matriz de graus
+  degreeMatrix(){
+    const D = Array.from({length:NUM_MICRO},()=>new Array(NUM_MICRO).fill(0));
+    for (let i = 0; i < NUM_MICRO; i++){
+      const r = Math.floor(i/6), c = i%6;
+      let deg = 0;
+      if (r>0) deg++; if (r<5) deg++; if (c>0) deg++; if (c<5) deg++;
+      D[i][i] = deg;
+    }
+    return D;
+  }
+  // Laplaciano L = D - A ponderado pelas energias
+  laplacian(){
+    const A = this.adjacencyMatrix();
+    const L = Array.from({length:NUM_MICRO},()=>new Array(NUM_MICRO).fill(0));
+    for (let i = 0; i < NUM_MICRO; i++){
+      let sumW = 0;
+      for (let j = 0; j < NUM_MICRO; j++){
+        if (A[i][j] === 1){
+          // peso da aresta = média das energias dos nós
+          const w = (this.energies[i] + this.energies[j]) / 2;
+          L[i][j] = -w;
+          sumW += w;
+        }
+      }
+      L[i][i] = sumW;
+    }
+    return L;
+  }
+}
+
+/* ==================================================================
+   [5] Spectral — Autovalores do Laplaciano (método de Jacobi)
+   Para matrizes simétricas reais.
+   ================================================================== */
+function jacobiEigenvalues(M, maxIter=200, tol=1e-10){
+  const n = M.length;
+  const A = M.map(r => r.slice());
+  for (let iter = 0; iter < maxIter; iter++){
+    // encontra maior elemento fora da diagonal
+    let maxVal = 0, p = 0, q = 1;
+    for (let i = 0; i < n; i++){
+      for (let j = i+1; j < n; j++){
+        if (Math.abs(A[i][j]) > maxVal){
+          maxVal = Math.abs(A[i][j]);
+          p = i; q = j;
+        }
+      }
+    }
+    if (maxVal < tol) break;
+    // calcula ângulo de rotação
+    const app = A[p][p], aqq = A[q][q], apq = A[p][q];
+    let theta;
+    if (Math.abs(app - aqq) < 1e-15){
+      theta = Math.PI/4;
+    } else {
+      theta = 0.5 * Math.atan2(2*apq, app - aqq);
+    }
+    const c = Math.cos(theta), s = Math.sin(theta);
+    // aplica rotação de Jacobi
+    const newA = A.map(r => r.slice());
+    for (let i = 0; i < n; i++){
+      if (i !== p && i !== q){
+        newA[i][p] = c*A[i][p] + s*A[i][q];
+        newA[p][i] = newA[i][p];
+        newA[i][q] = -s*A[i][p] + c*A[i][q];
+        newA[q][i] = newA[i][q];
+      }
+    }
+    newA[p][p] = c*c*app + 2*s*c*apq + s*s*aqq;
+    newA[q][q] = s*s*app - 2*s*c*apq + c*c*aqq;
+    newA[p][q] = 0; newA[q][p] = 0;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) A[i][j] = newA[i][j];
+  }
+  const eigs = [];
+  for (let i = 0; i < n; i++) eigs.push(A[i][i]);
+  eigs.sort((a,b)=>a-b);
+  return eigs;
+}
+
+/* ==================================================================
+   [6] Renderers — Canvas 2D para cada visualização
+   ================================================================== */
+
+// Layout de micrografo: 4 vértices em losango + 1 centro + 3 raios = 7 arestas
+// Vértices (em coords normalizadas 0..1):
+//   V0=(0.5,0.05) topo, V1=(0.95,0.5) dir, V2=(0.5,0.95) base, V3=(0.05,0.5) esq, V4=(0.5,0.5) centro
+// Arestas (7): V0-V1, V1-V2, V2-V3, V3-V0 (perímetro) + V4-V0, V4-V1, V4-V2 (raios)
+const MICRO_VERTS = [
+  [0.5,0.08],[0.92,0.5],[0.5,0.92],[0.08,0.5],[0.5,0.5]
+];
+const MICRO_EDGES = [
+  [0,1],[1,2],[2,3],[3,0],[4,0],[4,1],[4,2]
+];
+
+function drawMicrograph(ctx, micro, energy, maxE, w, h){
+  ctx.clearRect(0,0,w,h);
+  const pad = 6;
+  const iw = w - pad*2, ih = h - pad*2;
+  // fundo sutil
+  const intensity = maxE>0 ? energy/maxE : 0;
+  ctx.fillStyle = `rgba(0,217,255,${0.02 + intensity*0.08})`;
+  ctx.fillRect(0,0,w,h);
+  // desenha arestas
+  for (let e = 0; e < 7; e++){
+    const [a,b] = MICRO_EDGES[e];
+    const active = micro.bits[e] === 1;
+    const [x1,y1] = MICRO_VERTS[a];
+    const [x2,y2] = MICRO_VERTS[b];
+    ctx.strokeStyle = active
+      ? `rgba(0,217,255,${0.5 + intensity*0.5})`
+      : `rgba(90,102,128,0.25)`;
+    ctx.lineWidth = active ? 1.8 : 0.8;
+    ctx.beginPath();
+    ctx.moveTo(pad + x1*iw, pad + y1*ih);
+    ctx.lineTo(pad + x2*iw, pad + y2*ih);
+    ctx.stroke();
+    if (active){
+      ctx.shadowColor = 'rgba(0,217,255,0.6)';
+      ctx.shadowBlur = 4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+  }
+  // desenha vértices
+  for (let v = 0; v < 5; v++){
+    const [x,y] = MICRO_VERTS[v];
+    ctx.fillStyle = v===4 ? 'rgba(255,203,61,0.9)' : 'rgba(230,236,245,0.7)';
+    ctx.beginPath();
+    ctx.arc(pad + x*iw, pad + y*ih, v===4?2.2:1.6, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawGraph(ctx, field, view, w, h){
+  ctx.clearRect(0,0,w,h);
+  const pad = 30;
+  const gw = w - pad*2, gh = h - pad*2;
+  const maxE = Math.max(...field.energies, 0.001);
+  const nodeR = 10;
+
+  if (view === 'heatmap'){
+    // Heat map: cada célula 6x6 colorida pela energia
+    const cw = gw/6, ch = gh/6;
+    for (let i = 0; i < NUM_MICRO; i++){
+      const r = Math.floor(i/6), c = i%6;
+      const e = field.energies[i]/maxE;
+      // cor: gradiente azul→ciano→amarelo→magenta
+      const color = heatColor(e);
+      ctx.fillStyle = color;
+      ctx.fillRect(pad + c*cw, pad + r*ch, cw-1, ch-1);
+      ctx.fillStyle = 'rgba(230,236,245,0.85)';
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((field.energies[i]).toFixed(2), pad + c*cw + cw/2, pad + r*ch + ch/2);
+    }
+    return;
+  }
+
+  if (view === 'field'){
+    // Campo vetorial: setas apontando do centro de massa para cada nó
+    const [cmx, cmy] = field.centerOfMass();
+    const cw = gw/6, ch = gh/6;
+    // desenha nós
+    for (let i = 0; i < NUM_MICRO; i++){
+      const r = Math.floor(i/6), c = i%6;
+      const cx = pad + c*cw + cw/2;
+      const cy = pad + r*ch + ch/2;
+      const e = field.energies[i]/maxE;
+      // vetor do CM até o nó
+      const dx = cx - (pad + cmx*cw + cw/2);
+      const dy = cy - (pad + cmy*ch + ch/2);
+      const mag = Math.sqrt(dx*dx+dy*dy);
+      const scale = e * 0.8;
+      const ux = dx/mag * scale * Math.min(cw,ch)*0.4;
+      const uy = dy/mag * scale * Math.min(cw,ch)*0.4;
+      drawArrow(ctx, cx, cy, cx+ux, cy+uy, `rgba(255,203,61,${0.4+e*0.6})`, 1.5);
+      // nó
+      ctx.fillStyle = `rgba(0,217,255,${0.3+e*0.7})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4 + e*4, 0, Math.PI*2);
+      ctx.fill();
+    }
+    // centro de massa
+    ctx.fillStyle = 'rgba(255,62,165,0.9)';
+    ctx.beginPath();
+    ctx.arc(pad + cmx*cw + cw/2, pad + cmy*ch + ch/2, 5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,62,165,0.4)';
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    ctx.arc(pad + cmx*cw + cw/2, pad + cmy*ch + ch/2, 12, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    return;
+  }
+
+  // view === 'graph'
+  // desenha arestas ortogonais
+  const cw = gw/6, ch = gh/6;
+  ctx.strokeStyle = 'rgba(42,58,94,0.6)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < NUM_MICRO; i++){
+    const r = Math.floor(i/6), c = i%6;
+    const cx = pad + c*cw + cw/2;
+    const cy = pad + r*ch + ch/2;
+    if (c < 5){
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + cw, cy);
+      ctx.stroke();
+    }
+    if (r < 5){
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx, cy + ch);
+      ctx.stroke();
+    }
+  }
+  // desenha nós
+  for (let i = 0; i < NUM_MICRO; i++){
+    const r = Math.floor(i/6), c = i%6;
+    const cx = pad + c*cw + cw/2;
+    const cy = pad + r*ch + ch/2;
+    const e = field.energies[i]/maxE;
+    const radius = nodeR * (0.5 + e*0.8);
+    // halo
+    const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,radius*2.5);
+    grad.addColorStop(0, `rgba(0,217,255,${0.3+e*0.4})`);
+    grad.addColorStop(1, 'rgba(0,217,255,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius*2.5, 0, Math.PI*2);
+    ctx.fill();
+    // núcleo
+    ctx.fillStyle = `rgba(0,217,255,${0.6+e*0.4})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(230,236,245,0.8)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // índice
+    ctx.fillStyle = 'rgba(230,236,245,0.9)';
+    ctx.font = 'bold 9px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(i+1).padStart(2,'0'), cx, cy);
+  }
+}
+
+function heatColor(t){
+  // t em [0,1] → gradiente: azul escuro → ciano → amarelo → magenta
+  t = Math.max(0, Math.min(1, t));
+  let r,g,b;
+  if (t < 0.33){
+    const k = t/0.33;
+    r = 10; g = 20 + k*180; b = 80 + k*100;
+  } else if (t < 0.66){
+    const k = (t-0.33)/0.33;
+    r = 10 + k*240; g = 200 - k*30; b = 180 - k*150;
+  } else {
+    const k = (t-0.66)/0.34;
+    r = 250; g = 170 - k*120; b = 30 + k*130;
+  }
+  return `rgb(${r|0},${g|0},${b|0})`;
+}
+
+function drawArrow(ctx, x1,y1,x2,y2,color,width){
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+  const ang = Math.atan2(y2-y1, x2-x1);
+  const ah = 5;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2 - ah*Math.cos(ang-0.4), y2 - ah*Math.sin(ang-0.4));
+  ctx.lineTo(x2 - ah*Math.cos(ang+0.4), y2 - ah*Math.sin(ang+0.4));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawRadar(ctx, field, w, h){
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2;
+  const R = Math.min(w,h)/2 - 30;
+  const maxE = Math.max(...field.energies, 0.001);
+  // anéis
+  ctx.strokeStyle = 'rgba(42,58,94,0.5)';
+  ctx.lineWidth = 1;
+  for (let k = 1; k <= 4; k++){
+    ctx.beginPath();
+    ctx.arc(cx, cy, R*k/4, 0, Math.PI*2);
+    ctx.stroke();
+  }
+  // eixos
+  for (let i = 0; i < NUM_MICRO; i++){
+    const a = (i/NUM_MICRO)*Math.PI*2 - Math.PI/2;
+    ctx.strokeStyle = 'rgba(42,58,94,0.3)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a)*R, cy + Math.sin(a)*R);
+    ctx.stroke();
+  }
+  // polígono
+  ctx.beginPath();
+  for (let i = 0; i < NUM_MICRO; i++){
+    const a = (i/NUM_MICRO)*Math.PI*2 - Math.PI/2;
+    const r = R * (field.energies[i]/maxE);
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,217,255,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,217,255,0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // pontos
+  for (let i = 0; i < NUM_MICRO; i++){
+    const a = (i/NUM_MICRO)*Math.PI*2 - Math.PI/2;
+    const r = R * (field.energies[i]/maxE);
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    ctx.fillStyle = i < 18 ? 'rgba(0,217,255,0.9)' : 'rgba(255,62,165,0.9)';
+    ctx.beginPath();
+    ctx.arc(x,y,2.5,0,Math.PI*2);
+    ctx.fill();
+  }
+  // rótulos
+  ctx.fillStyle = 'rgba(136,147,173,0.7)';
+  ctx.font = '8px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < NUM_MICRO; i += 6){
+    const a = (i/NUM_MICRO)*Math.PI*2 - Math.PI/2;
+    const x = cx + Math.cos(a)*(R+14);
+    const y = cy + Math.sin(a)*(R+14);
+    ctx.fillText('M'+(i+1), x, y);
+  }
+}
+
+function drawSurface(ctx, field, scale, rot, w, h){
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2 + 20;
+  const maxE = Math.max(...field.energies, 0.001);
+  // projeção isométrica com rotação
+  const cosR = Math.cos(rot), sinR = Math.sin(rot);
+  const tilt = 0.55;
+  const cellW = 26, cellH = 14;
+  const amp = 60 * scale;
+  // coleta vértices
+  const pts = [];
+  for (let r = 0; r <= 6; r++){
+    for (let c = 0; c <= 6; c++){
+      // interpola energia para vértices da malha
+      let e = 0, cnt = 0;
+      for (let dr = -1; dr <= 0; dr++){
+        for (let dc = -1; dc <= 0; dc++){
+          const rr = r+dr, cc = c+dc;
+          if (rr>=0 && rr<6 && cc>=0 && cc<6){
+            e += field.energies[rr*6+cc];
+            cnt++;
+          }
+        }
+      }
+      e = cnt>0 ? e/cnt/maxE : 0;
+      const x3 = (c - 3) * cellW;
+      const y3 = (r - 3) * cellH;
+      const z3 = -e * amp;
+      // rotação em Y
+      const xr = x3*cosR - y3*sinR;
+      const yr = x3*sinR + y3*cosR;
+      // projeção simples
+      const px = cx + xr;
+      const py = cy + yr*tilt + z3;
+      pts.push({px, py, e, r, c});
+    }
+  }
+  // desenha células (de trás para frente)
+  const cells = [];
+  for (let r = 0; r < 6; r++){
+    for (let c = 0; c < 6; c++){
+      const i00 = r*7 + c;
+      const i10 = r*7 + c + 1;
+      const i01 = (r+1)*7 + c;
+      const i11 = (r+1)*7 + c + 1;
+      const e = field.energies[r*6+c]/maxE;
+      cells.push({
+        p: [pts[i00], pts[i10], pts[i11], pts[i01]],
+        e, r, c,
+        depth: (pts[i00].py + pts[i11].py)/2
+      });
+    }
+  }
+  cells.sort((a,b)=>a.depth - b.depth);
+  for (const cell of cells){
+    ctx.beginPath();
+    ctx.moveTo(cell.p[0].px, cell.p[0].py);
+    for (let k = 1; k < 4; k++) ctx.lineTo(cell.p[k].px, cell.p[k].py);
+    ctx.closePath();
+    ctx.fillStyle = heatColor(cell.e * 0.9 + 0.05);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(230,236,245,0.25)';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+  // eixo
+  ctx.strokeStyle = 'rgba(136,147,173,0.4)';
+  ctx.setLineDash([2,3]);
+  ctx.beginPath();
+  ctx.moveTo(cx - 80, cy + 40);
+  ctx.lineTo(cx + 80, cy + 40);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawSigmoid(ctx, k, c, w, h){
+  ctx.clearRect(0,0,w,h);
+  const pad = 24;
+  const gw = w - pad*2, gh = h - pad*2;
+  // eixos
+  ctx.strokeStyle = 'rgba(42,58,94,0.8)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, pad + gh);
+  ctx.lineTo(pad + gw, pad + gh);
+  ctx.stroke();
+  // grid
+  ctx.strokeStyle = 'rgba(42,58,94,0.3)';
+  for (let i = 1; i < 5; i++){
+    ctx.beginPath();
+    ctx.moveTo(pad, pad + gh*i/5);
+    ctx.lineTo(pad + gw, pad + gh*i/5);
+    ctx.stroke();
+  }
+  for (let i = 1; i < 10; i++){
+    ctx.beginPath();
+    ctx.moveTo(pad + gw*i/10, pad);
+    ctx.lineTo(pad + gw*i/10, pad + gh);
+    ctx.stroke();
+  }
+  // curva
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(255,203,61,0.95)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i <= 200; i++){
+    const x = i/200;
+    const y = sigmoid(x, k, c);
+    const px = pad + x*gw;
+    const py = pad + gh - y*gh;
+    if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  // sombra
+  ctx.lineTo(pad + gw, pad + gh);
+  ctx.lineTo(pad, pad + gh);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,203,61,0.08)';
+  ctx.fill();
+  // marca centro
+  ctx.strokeStyle = 'rgba(255,62,165,0.6)';
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();
+  ctx.moveTo(pad + c*gw, pad);
+  ctx.lineTo(pad + c*gw, pad + gh);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // rótulos
+  ctx.fillStyle = 'rgba(136,147,173,0.8)';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('x', pad + gw/2, pad + gh + 16);
+  ctx.textAlign = 'right';
+  ctx.fillText('S(x)', pad - 6, pad + 4);
+  ctx.textAlign = 'left';
+  ctx.fillText('0', pad - 2, pad + gh + 12);
+  ctx.textAlign = 'right';
+  ctx.fillText('1', pad + gw + 2, pad + gh + 12);
+  ctx.textAlign = 'right';
+  ctx.fillText('1', pad - 6, pad + 4);
+  ctx.textAlign = 'left';
+  ctx.fillText('0', pad - 6, pad + gh + 4);
+  // fórmula
+  ctx.fillStyle = 'rgba(255,203,61,0.9)';
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`k=${k.toFixed(1)}  c=${c.toFixed(2)}`, pad + 8, pad + 14);
+}
+
+function drawSpectrum(ctx, eigs, w, h){
+  ctx.clearRect(0,0,w,h);
+  const pad = 28;
+  const gw = w - pad*2, gh = h - pad*2;
+  const maxL = Math.max(...eigs.map(Math.abs), 0.001);
+  // eixo
+  ctx.strokeStyle = 'rgba(42,58,94,0.8)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad + gh);
+  ctx.lineTo(pad + gw, pad + gh);
+  ctx.stroke();
+  // barras
+  const bw = gw / eigs.length * 0.75;
+  for (let i = 0; i < eigs.length; i++){
+    const x = pad + (i/eigs.length)*gw + (gw/eigs.length - bw)/2;
+    const v = eigs[i]/maxL;
+    const bh = v * gh;
+    const grad = ctx.createLinearGradient(0, pad + gh - bh, 0, pad + gh);
+    grad.addColorStop(0, 'rgba(169,123,255,0.9)');
+    grad.addColorStop(1, 'rgba(169,123,255,0.3)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, pad + gh - bh, bw, bh);
+    ctx.strokeStyle = 'rgba(169,123,255,0.6)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(x, pad + gh - bh, bw, bh);
+  }
+  // rótulos
+  ctx.fillStyle = 'rgba(136,147,173,0.8)';
+  ctx.font = '9px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('λ₀', pad, pad + gh + 14);
+  ctx.fillText('λ₃₅', pad + gw, pad + gh + 14);
+  ctx.fillText('Autovalor', pad + gw/2, pad + gh + 14);
+  ctx.textAlign = 'right';
+  ctx.fillText(maxL.toFixed(2), pad - 4, pad + 4);
+  ctx.fillText('0', pad - 4, pad + gh + 4);
+  // linha do λ₁ (conectividade algébrica)
+  if (eigs.length > 1){
+    const x1 = pad + (1/eigs.length)*gw;
+    ctx.strokeStyle = 'rgba(53,227,154,0.8)';
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    ctx.moveTo(x1, pad);
+    ctx.lineTo(x1, pad + gh);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(53,227,154,0.9)';
+    ctx.textAlign = 'left';
+    ctx.fillText('λ₁ (conect.)', x1 + 4, pad + 10);
+  }
+}
+
+/* ==================================================================
+   [7] UI Controller — Estado global e eventos
+   ================================================================== */
+const state = {
+  field: new TopoField(),
+  binQx: null,
+  binQy: null,
+  kDec: null,
+  Q: null,
+  graphView: 'graph',
+  surfRot: 0.6,
+  surfScale: 1,
+  animFrame: null
+};
+
+function setStatus(msg, type=''){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (type ? ' '+type : '');
+}
+
+function parseScalar(input){
+  input = input.trim();
+  if (!input) return null;
+  let k;
+  if (input.startsWith('0x') || input.startsWith('0X')){
+    k = BigInt(input);
+  } else if (/^[0-9]+$/.test(input)){
+    k = BigInt(input);
+  } else {
+    return null;
+  }
+  if (k <= 0n || k >= SECP.n) return null;
+  return k;
+}
+
+function compute(){
+  const input = document.getElementById('scalarInput').value;
+  const k = parseScalar(input);
+  if (k === null){
+    setStatus('Entrada inválida. Use decimal ou 0xhex em [1, n-1].', 'err');
+    return;
+  }
+  setStatus('Calculando Q = k × G…', '');
+  // usa setTimeout para liberar o render
+  setTimeout(() => {
+    try {
+      const t0 = performance.now();
+      const Q = scalarMult(k, [SECP.Gx, SECP.Gy]);
+      const t1 = performance.now();
+      if (!Q){ setStatus('Erro: ponto no infinito', 'err'); return; }
+      state.kDec = k;
+      state.Q = Q;
+      state.binQx = bigintToBin256(Q[0]);
+      state.binQy = bigintToBin256(Q[1]);
+      const mapped = mapBitsToMicrographs(state.binQx, state.binQy);
+      state.field.compute(mapped);
+      setStatus(`Calculado em ${(t1-t0).toFixed(1)} ms`, 'ok');
+      renderAll();
+    } catch (e){
+      console.error(e);
+      setStatus('Erro: ' + e.message, 'err');
+    }
+  }, 10);
+}
+
+function renderAll(){
+  renderCoords();
+  renderBits();
+  renderMicroGrid();
+  renderGraph();
+  renderRadar();
+  renderSurface();
+  renderSigmoid();
+  renderSpectrum();
+  renderStats();
+  renderFeatureVector();
+}
+
+function renderCoords(){
+  if (!state.Q){ return; }
+  const k = state.kDec;
+  document.getElementById('kDec').textContent = k.toString();
+  document.getElementById('kHex').textContent = '0x' + k.toString(16);
+  document.getElementById('kBits').textContent = k.toString(2).length;
+  document.getElementById('kValid').textContent = '1 ≤ k < n ✓';
+  document.getElementById('qxBox').textContent =
+    'Hex: 0x' + bigintToHex(state.Q[0]) + '\n' +
+    'Dec: ' + state.Q[0].toString();
+  document.getElementById('qyBox').textContent =
+    'Hex: 0x' + bigintToHex(state.Q[1]) + '\n' +
+    'Dec: ' + state.Q[1].toString();
+  document.getElementById('qxParity').textContent = (state.Q[0] & 1n) === 0n ? 'Par' : 'Ímpar';
+  document.getElementById('qyParity').textContent = (state.Q[1] & 1n) === 0n ? 'Par' : 'Ímpar';
+  document.getElementById('qxOnes').textContent = state.binQx.split('').filter(b=>b==='1').length + ' / 256';
+  document.getElementById('qyOnes').textContent = state.binQy.split('').filter(b=>b==='1').length + ' / 256';
+}
+
+function renderBits(){
+  const qxEl = document.getElementById('bitsQx');
+  const qyEl = document.getElementById('bitsQy');
+  qxEl.innerHTML = '';
+  qyEl.innerHTML = '';
+  for (let i = 0; i < 256; i++){
+    const d1 = document.createElement('div');
+    d1.textContent = state.binQx[i];
+    if (state.binQx[i] === '1') d1.classList.add('on');
+    qxEl.appendChild(d1);
+    const d2 = document.createElement('div');
+    d2.textContent = state.binQy[i];
+    if (state.binQy[i] === '1') d2.classList.add('on','qy');
+    qyEl.appendChild(d2);
+  }
+}
+
+function renderMicroGrid(){
+  const grid = document.getElementById('microGrid');
+  grid.innerHTML = '';
+  const maxE = Math.max(...state.field.energies, 0.001);
+  for (let i = 0; i < NUM_MICRO; i++){
+    const m = state.field.micrographs[i];
+    const cell = document.createElement('div');
+    cell.className = 'micro';
+    cell.title = `Micrografo M${i+1} · ${m.source}\nBits: ${m.bits.join('')}\nValor: ${m.value}/127\nEnergia: ${m.energy.toFixed(3)}`;
+    const cvs = document.createElement('canvas');
+    cvs.width = 100; cvs.height = 100;
+    cell.appendChild(cvs);
+    const idx = document.createElement('div');
+    idx.className = 'idx';
+    idx.textContent = 'M' + String(i+1).padStart(2,'0');
+    cell.appendChild(idx);
+    const val = document.createElement('div');
+    val.className = 'val';
+    val.textContent = m.energy.toFixed(2);
+    cell.appendChild(val);
+    grid.appendChild(cell);
+    const ctx = cvs.getContext('2d');
+    drawMicrograph(ctx, m, m.energy, maxE, cvs.width, cvs.height);
+  }
+}
+
+function renderGraph(){
+  const cvs = document.getElementById('cvGraph');
+  const ctx = cvs.getContext('2d');
+  drawGraph(ctx, state.field, state.graphView, cvs.width, cvs.height);
+}
+
+function renderRadar(){
+  const cvs = document.getElementById('cvRadar');
+  const ctx = cvs.getContext('2d');
+  drawRadar(ctx, state.field, cvs.width, cvs.height);
+}
+
+function renderSurface(){
+  const cvs = document.getElementById('cvSurf');
+  const ctx = cvs.getContext('2d');
+  drawSurface(ctx, state.field, state.surfScale, state.surfRot, cvs.width, cvs.height);
+}
+
+function renderSigmoid(){
+  const cvs = document.getElementById('cvSig');
+  const ctx = cvs.getContext('2d');
+  drawSigmoid(ctx, state.field.sigK, state.field.sigC, cvs.width, cvs.height);
+}
+
+function renderSpectrum(){
+  const cvs = document.getElementById('cvSpec');
+  const ctx = cvs.getContext('2d');
+  if (!state._eigs) return;
+  drawSpectrum(ctx, state._eigs, cvs.width, cvs.height);
+}
+
+function renderStats(){
+  const f = state.field;
+  document.getElementById('mEnergy').textContent = f.totalEnergy().toFixed(3);
+  document.getElementById('mAvg').textContent = f.avgEnergy().toFixed(3);
+  document.getElementById('mVar').textContent = f.variance().toFixed(4);
+  document.getElementById('mEntropy').textContent = f.entropy().toFixed(3) + ' bits';
+  // Hamming Qx⊕Qy
+  let ham = 0;
+  for (let i = 0; i < 256; i++) if (state.binQx[i] !== state.binQy[i]) ham++;
+  document.getElementById('mHamming').textContent = ham + ' / 256';
+  // espectro
+  const L = f.laplacian();
+  const eigs = jacobiEigenvalues(L);
+  state._eigs = eigs;
+  document.getElementById('mSpecRad').textContent = Math.max(...eigs).toFixed(3);
+  document.getElementById('mConn').textContent = (eigs[1] || 0).toFixed(4);
+  const [cx, cy] = f.centerOfMass();
+  document.getElementById('mMass').textContent = `(${cx.toFixed(2)}, ${cy.toFixed(2)})`;
+  renderSpectrum();
+}
+
+function renderFeatureVector(){
+  const el = document.getElementById('featureVec');
+  const parts = state.field.energies.map((e,i) =>
+    `<span style="color:${i<18?'var(--cyan)':'var(--magenta)'}">E${String(i+1).padStart(2,'0')}=${e.toFixed(4)}</span>`
+  );
+  el.innerHTML = '[ ' + parts.join(', ') + ' ]';
+}
+
+function buildWeightsUI(){
+  const grid = document.getElementById('weightsGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < NUM_MICRO; i++){
+    const row = document.createElement('div');
+    row.className = 'slider-row';
+    row.innerHTML = `
+      <label>W${String(i+1).padStart(2,'0')}</label>
+      <input type="range" min="0" max="5" step="0.05" value="${state.field.weights[i]}" data-idx="${i}">
+      <span class="num">${state.field.weights[i].toFixed(2)}</span>
+    `;
+    grid.appendChild(row);
+    const inp = row.querySelector('input');
+    const num = row.querySelector('.num');
+    inp.addEventListener('input', () => {
+      const v = parseFloat(inp.value);
+      state.field.weights[i] = v;
+      num.textContent = v.toFixed(2);
+      recomputeField();
+    });
+  }
+}
+
+function recomputeField(){
+  if (!state.binQx) return;
+  const mapped = mapBitsToMicrographs(state.binQx, state.binQy);
+  state.field.compute(mapped);
+  renderMicroGrid();
+  renderGraph();
+  renderRadar();
+  renderSurface();
+  renderSigmoid();
+  renderStats();
+  renderFeatureVector();
+}
+
+/* ============ Eventos ============ */
+document.getElementById('btnCalc').addEventListener('click', compute);
+document.getElementById('scalarInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') compute();
+});
+document.getElementById('btnExample').addEventListener('click', () => {
+  document.getElementById('scalarInput').value = '1';
+  compute();
+});
+document.getElementById('btnRandom').addEventListener('click', () => {
+  // gera chave aleatória de 256 bits
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  // garante que está em [1, n-1]
+  let hex = '0x' + Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+  let k = BigInt(hex);
+  k = ((k % (SECP.n - 1n)) + 1n);
+  document.getElementById('scalarInput').value = '0x' + k.toString(16);
+  compute();
+});
+document.getElementById('btnClear').addEventListener('click', () => {
+  document.getElementById('scalarInput').value = '';
+  setStatus('Aguardando entrada…');
+});
+
+document.getElementById('sigK').addEventListener('input', e => {
+  state.field.sigK = parseFloat(e.target.value);
+  document.getElementById('sigKVal').textContent = state.field.sigK.toFixed(1);
+  recomputeField();
+});
+document.getElementById('sigC').addEventListener('input', e => {
+  state.field.sigC = parseFloat(e.target.value);
+  document.getElementById('sigCVal').textContent = state.field.sigC.toFixed(2);
+  recomputeField();
+});
+document.getElementById('surfScale').addEventListener('input', e => {
+  state.surfScale = parseFloat(e.target.value);
+  document.getElementById('surfScaleVal').textContent = state.surfScale.toFixed(2);
+  renderSurface();
+});
+
+// tabs do grafo
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    state.graphView = t.dataset.view;
+    renderGraph();
+  });
+});
+
+// rotação da superfície por mouse
+(function(){
+  const cvs = document.getElementById('cvSurf');
+  let dragging = false, lastX = 0;
+  cvs.addEventListener('mousedown', e => { dragging = true; lastX = e.clientX; });
+  window.addEventListener('mouseup', () => dragging = false);
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX;
+    state.surfRot += dx * 0.01;
+    lastX = e.clientX;
+    renderSurface();
+  });
+  cvs.addEventListener('mousemove', e => {
+    if (dragging) return;
+    const rect = cvs.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    state.surfRot = 0.3 + x * 1.2;
+    renderSurface();
+  });
+})();
+
+// botões de preset de pesos
+document.getElementById('btnWUniform').addEventListener('click', () => {
+  state.field.weights.fill(1);
+  syncWeightsUI(); recomputeField();
+});
+document.getElementById('btnWRamp').addEventListener('click', () => {
+  for (let i = 0; i < NUM_MICRO; i++) state.field.weights[i] = 0.2 + (i/(NUM_MICRO-1))*2.8;
+  syncWeightsUI(); recomputeField();
+});
+document.getElementById('btnWRandom').addEventListener('click', () => {
+  for (let i = 0; i < NUM_MICRO; i++) state.field.weights[i] = Math.random()*3 + 0.1;
+  syncWeightsUI(); recomputeField();
+});
+document.getElementById('btnWCenter').addEventListener('click', () => {
+  // pesos maiores no centro do grid 6x6
+  for (let i = 0; i < NUM_MICRO; i++){
+    const r = Math.floor(i/6), c = i%6;
+    const d = Math.sqrt((r-2.5)**2 + (c-2.5)**2);
+    state.field.weights[i] = Math.max(0.2, 3 - d*0.7);
+  }
+  syncWeightsUI(); recomputeField();
+});
+function syncWeightsUI(){
+  const inputs = document.querySelectorAll('#weightsGrid input[type=range]');
+  inputs.forEach(inp => {
+    const i = parseInt(inp.dataset.idx);
+    inp.value = state.field.weights[i];
+    inp.nextElementSibling.textContent = state.field.weights[i].toFixed(2);
+  });
+}
+
+/* ============ Inicialização ============ */
+buildWeightsUI();
+// carrega com chave de exemplo ao iniciar
+document.getElementById('scalarInput').value = '0x' + BigInt(Math.floor(Math.random()*1e12) + 1000).toString(16);
+compute();
+
+// auto-rotação suave da superfície quando ocioso
+let idleTimer = null;
+function resetIdle(){
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    if (!state.Q) return;
+    function tick(){
+      state.surfRot += 0.004;
+      renderSurface();
+      idleTimer = setTimeout(tick, 50);
+    }
+    tick();
+  }, 4000);
+}
+document.addEventListener('mousemove', resetIdle);
+document.addEventListener('keydown', resetIdle);
+resetIdle();
+
+// Redimensionamento responsivo dos canvases
+function resizeCanvases(){
+  const pairs = [
+    ['cvSig', 600, 220],
+    ['cvGraph', 600, 420],
+    ['cvRadar', 400, 360],
+    ['cvSurf', 400, 320],
+    ['cvSpec', 600, 220]
+  ];
+  for (const [id, defW, defH] of pairs){
+    const cvs = document.getElementById(id);
+    const parent = cvs.parentElement;
+    const w = parent.clientWidth - 24;
+    const ratio = defH / defW;
+    cvs.width = Math.max(300, w);
+    cvs.height = Math.max(180, w * ratio);
+  }
+  if (state.Q) renderAll();
+}
+window.addEventListener('resize', resizeCanvases);
+setTimeout(resizeCanvases, 50);
+
+</script>
+</body>
+</html>

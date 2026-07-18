@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAV-9 × SECP256k1 — Refinado</title>
+  <style>
+    :root {
+      --bg: #0a0a1a;
+      --fg: #0af;
+      --accent: #0f0;
+      --panel: #000;
+      --border: #030;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 6px;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      opacity: 0.8;
+      max-width: 600px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 12px 0;
+    }
+    button {
+      background: var(--panel);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #020;
+    }
+    button:active {
+      background: #030;
+    }
+    pre {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 14px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 220px;
+      overflow: auto;
+      margin-top: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      min-height: 1.4em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BAV-9 × SECP256k1 — Refinado</h1>
+    <div class="subtitle">
+      Estado escalar em base40 (símbolos) • Coordenadas com 77 casas decimais exatas • Resíduos quadráticos garantidos
+    </div>
+  </header>
+
+  <div class="controls">
+    <button id="step">Próximo Passo</button>
+    <button id="run">▶ Executar Contínuo</button>
+    <button id="stop">⏹ Parar</button>
+    <button id="reset">↺ Reset</button>
+    <button id="download">💾 Baixar JSON</button>
+  </div>
+
+  <pre id="output">Aguardando inicialização...</pre>
+  <div class="status" id="status"></div>
+
+  <script>
+    // ===================================================================
+    // CONSTANTES CRIPTOGRÁFICAS E SIMBÓLICAS
+    // ===================================================================
+    const P = BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F");
+    const MOD_77 = 10n ** 77n;
+    const PI_77 = BigInt("31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679");
+
+    const BASE40_SYMBOLS = [
+      'α', 'β', 'γ', 'Δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ',
+      'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ',
+      'φ', 'χ', 'ψ', 'Ω', 'Ϙ', 'ω', 'Ϟ', 'Ϡ', 'Ҕ', 'Ԛ',
+      'Ӄ', 'Џ', 'Ʃ', 'Ɣ', 'Ӂ', 'Ҙ', 'ʤ', '⌀', 'ℓ', '∂'
+    ];
+
+    // ===================================================================
+    // FUNÇÕES DE CONVERSÃO EXATA
+    // ===================================================================
+    function bigintToBase40(value) {
+      if (value === 0n) return 'α';
+      let num = value;
+      let result = '';
+      const base = 40n;
+      while (num > 0n) {
+        result = BASE40_SYMBOLS[Number(num % base)] + result;
+        num /= base;
+      }
+      return result;
+    }
+
+    function deriveCoordinates(s, t) {
+      const xInt = (s * t) % MOD_77;
+      const yInt = (s * PI_77 + t) % MOD_77;
+      const pad = (val) => val.toString().padStart(77, '0');
+      return { x: pad(xInt), y: pad(yInt) };
+    }
+
+    // ===================================================================
+    // ESTADO GLOBAL
+    // ===================================================================
+    let state = {
+      s: 2n,
+      t: 0n,
+      history: []
+    };
+
+    const elements = {
+      output: document.getElementById('output'),
+      status: document.getElementById('status')
+    };
+
+    let continuousRun = false;
+    let animationId = null;
+
+    // ===================================================================
+    // ATUALIZAÇÃO DE INTERFACE
+    // ===================================================================
+    function updateDisplay() {
+      const last = state.history[state.history.length - 1];
+      if (!last) {
+        elements.output.textContent = 'Nenhum estado gerado.';
+        return;
+      }
+
+      elements.output.textContent = 
+        `t = ${last.t}\n` +
+        `s (base40) = ${last.s_base40}\n` +
+        `x = 0.${last.x}\n` +
+        `y = 0.${last.y}`;
+
+      elements.status.textContent = `Histórico: ${state.history.length} / 77 estados`;
+    }
+
+    // ===================================================================
+    // LÓGICA PRINCIPAL
+    // ===================================================================
+    function computeNextState() {
+      state.s = (state.s * state.s) % P;
+      state.t++;
+
+      const sBase40 = bigintToBase40(state.s);
+      const { x, y } = deriveCoordinates(state.s, state.t);
+
+      state.history.push({
+        t: state.t.toString(),
+        s_base40: sBase40,
+        x: x,
+        y: y
+      });
+
+      if (state.history.length > 77) {
+        state.history.shift();
+      }
+    }
+
+    function step() {
+      computeNextState();
+      updateDisplay();
+    }
+
+    function runContinuous() {
+      if (continuousRun) return;
+      continuousRun = true;
+      elements.status.textContent = 'Executando continuamente...';
+      animate();
+    }
+
+    function animate() {
+      if (!continuousRun) return;
+      step();
+      animationId = setTimeout(() => requestAnimationFrame(animate), 100);
+    }
+
+    function stop() {
+      continuousRun = false;
+      if (animationId) {
+        clearTimeout(animationId);
+        animationId = null;
+      }
+      elements.status.textContent = 'Parado.';
+    }
+
+    function reset() {
+      stop();
+      state = { s: 2n, t: 0n, history: [] };
+      elements.output.textContent = 'Estado resetado. Clique em "Próximo Passo".';
+      elements.status.textContent = 'Pronto.';
+    }
+
+    function downloadJSON() {
+      if (state.history.length === 0) {
+        alert('Nenhum dado para exportar.');
+        return;
+      }
+      const jsonStr = JSON.stringify(state.history, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bav9_secp256k1_refined.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // ===================================================================
+    // EVENTOS
+    // ===================================================================
+    document.getElementById('step').onclick = step;
+    document.getElementById('run').onclick = runContinuous;
+    document.getElementById('stop').onclick = stop;
+    document.getElementById('reset').onclick = reset;
+    document.getElementById('download').onclick = downloadJSON;
+
+    // Inicializa
+    reset();
+  </script>
+</body>
+</html>
+

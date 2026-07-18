@@ -1,0 +1,1974 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body {
+                  background-color: white; /* Ensure the iframe has a white background */
+                }
+
+                :root {
+  --bg: #0b0f14;
+  --panel: #151b22;
+  --border: #ff9900;
+  --stack: #2ecc71;
+  --opcode: #3498db;
+  --error: #ff4444;
+  --success: #00ff99;
+  --text: #e0e6ed;
+  --muted: #8a95a5;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Consolas', 'Monaco', monospace;
+  min-height: 100vh;
+  padding: 10px;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,153,0,0.08), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(52,152,219,0.08), transparent 40%);
+}
+
+.header {
+  text-align: center;
+  padding: 15px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 15px;
+}
+
+.header h1 {
+  color: var(--border);
+  font-size: 1.8em;
+  text-shadow: 0 0 10px rgba(255,153,0,0.5);
+}
+
+.subtitle { color: var(--muted); margin-top: 5px; }
+
+.controls {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+button {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: var(--border);
+  color: var(--bg);
+  box-shadow: 0 0 10px var(--border);
+}
+
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.primary-btn {
+  background: var(--border);
+  color: var(--bg);
+  font-weight: bold;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.mini-btn { padding: 4px 10px; font-size: 0.85em; }
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 1100px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 0 15px rgba(255,153,0,0.1);
+}
+
+.panel h2 {
+  color: var(--border);
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255,153,0,0.3);
+  padding-bottom: 6px;
+}
+
+.field { margin-bottom: 10px; }
+.field label { display: block; color: var(--muted); font-size: 0.85em; margin-bottom: 3px; }
+
+input[type="text"], input[type="number"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid #2a3340;
+  color: var(--text);
+  padding: 6px;
+  font-family: inherit;
+  border-radius: 3px;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--border);
+}
+
+.hex-output, .hash-pipeline, .stack-history {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255,153,0,0.3);
+}
+
+.hex-output h3, .hash-pipeline h3, .stack-history h3 {
+  color: var(--opcode);
+  font-size: 0.95em;
+  margin-bottom: 6px;
+}
+
+pre {
+  background: var(--bg);
+  padding: 8px;
+  border-radius: 3px;
+  overflow-x: auto;
+  font-size: 0.8em;
+  word-break: break-all;
+  color: var(--success);
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.script-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  flex: 1;
+  padding: 6px;
+  font-size: 0.85em;
+}
+
+.tab.active {
+  background: var(--opcode);
+  color: white;
+  border-color: var(--opcode);
+}
+
+.opcode-list {
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 8px;
+  min-height: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.opcode-item {
+  padding: 6px 8px;
+  margin: 3px 0;
+  background: rgba(52,152,219,0.1);
+  border-left: 3px solid var(--opcode);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.opcode-item:hover { background: rgba(52,152,219,0.25); }
+
+.opcode-item.current {
+  background: rgba(255,153,0,0.3);
+  border-left-color: var(--border);
+  box-shadow: 0 0 8px var(--border);
+}
+
+.opcode-item.executed {
+  opacity: 0.5;
+  border-left-color: var(--success);
+}
+
+.opcode-item .op-name { color: var(--opcode); font-weight: bold; }
+.opcode-item .op-data { color: var(--success); font-size: 0.85em; }
+
+.current-instruction {
+  margin-top: 10px;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.current-instruction code {
+  color: var(--border);
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.opcode-info {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(52,152,219,0.08);
+  border-left: 3px solid var(--opcode);
+  border-radius: 3px;
+  min-height: 60px;
+}
+
+.opcode-info h4 { color: var(--opcode); margin-bottom: 5px; }
+.opcode-info p { font-size: 0.9em; color: var(--muted); line-height: 1.4; }
+
+.stack-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.stack-controls code {
+  color: var(--stack);
+  margin-left: auto;
+  font-size: 0.85em;
+}
+
+.stack-view {
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  justify-content: center;
+}
+
+#stack-canvas { max-width: 100%; height: auto; }
+
+#stack-history {
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 0.8em;
+}
+
+.history-entry {
+  padding: 3px 6px;
+  margin: 2px 0;
+  background: var(--bg);
+  border-radius: 2px;
+  color: var(--muted);
+}
+
+.history-entry.push { border-left: 2px solid var(--stack); }
+.history-entry.pop { border-left: 2px solid var(--error); }
+
+.panel-bottom {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#execution-log {
+  background: var(--bg);
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  min-height: 80px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  padding: 3px 0;
+  border-bottom: 1px dotted rgba(255,255,255,0.05);
+}
+
+.log-entry.info { color: var(--text); }
+.log-entry.success { color: var(--success); }
+.log-entry.error { color: var(--error); }
+.log-entry.warn { color: var(--border); }
+
+.footer {
+  text-align: center;
+  padding: 10px;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+
+#hash-svg {
+  width: 100%;
+  height: 120px;
+  background: var(--bg);
+  border-radius: 4px;
+}
+
+.tx-item {
+  background: var(--bg);
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 3px;
+  border: 1px solid #2a3340;
+}
+
+.tx-item .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tx-item .row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tx-item .remove-btn {
+  background: var(--error);
+  color: white;
+  border: none;
+  padding: 2px 8px;
+  font-size: 0.8em;
+  margin-top: 4px;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 5px var(--border); }
+  50% { box-shadow: 0 0 20px var(--border); }
+}
+
+.pulse { animation: pulse 1.5s infinite; }
+
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-in { animation: slideIn 0.3s ease-out; }
+
+
+              </style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitcoin Script Virtual Machine</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>⚡ Bitcoin Script Virtual Machine</h1>
+    <p class="subtitle">Aprenda como uma Raw Transaction é validada</p>
+    <div class="controls">
+      <button id="btn-run" title="Executar tudo">▶ Run</button>
+      <button id="btn-pause" title="Pausar">⏸ Pause</button>
+      <button id="btn-next" title="Próximo passo">⏭ Next</button>
+      <button id="btn-prev" title="Passo anterior">⏮ Previous</button>
+      <button id="btn-reset" title="Reiniciar">⟲ Reset</button>
+      <label>Velocidade:
+        <input type="range" id="speed" min="100" max="2000" value="800" step="100">
+        <span id="speed-value">800ms</span>
+      </label>
+    </div>
+  </header>
+
+  <main class="main-grid">
+    <!-- Painel Esquerdo: Raw Transaction -->
+    <section class="panel panel-left">
+      <h2>📜 Raw Transaction</h2>
+      <div class="tx-builder">
+        <div class="field">
+          <label>Version (4 bytes LE)</label>
+          <input type="text" id="tx-version" value="01000000">
+        </div>
+        <div class="field">
+          <label>Inputs</label>
+          <div id="inputs-container"></div>
+          <button id="btn-add-input" class="mini-btn">+ Input</button>
+        </div>
+        <div class="field">
+          <label>Outputs</label>
+          <div id="outputs-container"></div>
+          <button id="btn-add-output" class="mini-btn">+ Output</button>
+        </div>
+        <div class="field">
+          <label>LockTime (4 bytes LE)</label>
+          <input type="text" id="tx-locktime" value="00000000">
+        </div>
+        <button id="btn-serialize" class="primary-btn">Serializar →</button>
+      </div>
+      <div class="hex-output">
+        <h3>Hex da Transação</h3>
+        <pre id="tx-hex"></pre>
+      </div>
+      <div class="hash-pipeline">
+        <h3>Pipeline de Hash (TxID)</h3>
+        <svg id="hash-svg" viewBox="0 0 400 120"></svg>
+      </div>
+    </section>
+
+    <!-- Painel Central: Script -->
+    <section class="panel panel-center">
+      <h2>⚙️ Bitcoin Script</h2>
+      <div class="script-tabs">
+        <button class="tab active" data-tab="scriptSig">scriptSig (Unlocking)</button>
+        <button class="tab" data-tab="scriptPubKey">scriptPubKey (Locking)</button>
+        <button class="tab" data-tab="combined">Combinado</button>
+      </div>
+      <div class="opcode-list" id="opcode-list"></div>
+      <div class="current-instruction">
+        <span>Instrução Atual:</span>
+        <code id="current-opcode">—</code>
+      </div>
+      <div class="opcode-info">
+        <h4 id="opcode-name">—</h4>
+        <p id="opcode-desc">Selecione um opcode para ver a descrição.</p>
+      </div>
+    </section>
+
+    <!-- Painel Direito: Stack -->
+    <section class="panel panel-right">
+      <h2>📚 Stack</h2>
+      <div class="stack-controls">
+        <button id="btn-push" class="mini-btn">Push</button>
+        <button id="btn-pop" class="mini-btn">Pop</button>
+        <span>Topo: <code id="stack-top">—</code></span>
+      </div>
+      <div class="stack-view">
+        <canvas id="stack-canvas" width="320" height="500"></canvas>
+      </div>
+      <div class="stack-history">
+        <h3>Histórico</h3>
+        <div id="stack-history"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Painel Inferior: Log -->
+  <section class="panel panel-bottom">
+    <h2>📋 Execution Log</h2>
+    <div id="execution-log"></div>
+  </section>
+
+  <footer class="footer">
+    <p>Modo educacional • Offline • Sem dependências externas • ES2023</p>
+  </footer>
+
+  <script src="stack.js"></script>
+  <script src="opcode.js"></script>
+  <script src="hash.js"></script>
+  <script src="ecdsa.js"></script>
+  <script src="serializer.js"></script>
+  <script src="transaction.js"></script>
+  <script src="vm.js"></script>
+  <script src="animation.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+
+
+
+              <script>
+                              /**
+ * Stack - Pilha da VM do Bitcoin Script
+ * Estrutura LIFO (Last In, First Out) com histórico para "undo".
+ */
+class Stack {
+  constructor() {
+    this.items = [];
+    this.history = []; // registro de operações para step-back
+    this.listeners = [];
+  }
+
+  onChange(listener) {
+    this.listeners.push(listener);
+  }
+
+  _notify(type, data) {
+    this.history.push({ type, data, snapshot: [...this.items] });
+    this.listeners.forEach(l => l(type, data, this.items));
+  }
+
+  push(value) {
+    // value pode ser Uint8Array, string hex ou boolean
+    const normalized = this._normalize(value);
+    this.items.push(normalized);
+    this._notify('push', normalized);
+    return this;
+  }
+
+  pop() {
+    if (this.items.length === 0) {
+      throw new Error('Stack underflow: pilha vazia');
+    }
+    const value = this.items.pop();
+    this._notify('pop', value);
+    return value;
+  }
+
+  peek(offset = 0) {
+    const index = this.items.length - 1 - offset;
+    if (index < 0) return undefined;
+    return this.items[index];
+  }
+
+  top() { return this.peek(0); }
+
+  size() { return this.items.length; }
+
+  isEmpty() { return this.items.length === 0; }
+
+  clear() {
+    this.items = [];
+    this._notify('clear', null);
+  }
+
+  /** Restaura estado a partir do snapshot do histórico */
+  restoreSnapshot(snapshot) {
+    this.items = [...snapshot];
+    this._notify('restore', snapshot);
+  }
+
+  /** Converte para boolean seguindo regras do Bitcoin */
+  castToBool(value) {
+    if (value instanceof Uint8Array) {
+      for (let i = 0; i < value.length; i++) {
+        if (value[i] !== 0) {
+          // Exceção: número negativo zero (0x80 no último byte)
+          if (i === value.length - 1 && value[i] === 0x80) return false;
+          return true;
+        }
+      }
+      return false;
+    }
+    return Boolean(value);
+  }
+
+  _normalize(value) {
+    if (value instanceof Uint8Array) return value;
+    if (typeof value === 'boolean') return new Uint8Array(value ? [1] : [0]);
+    if (typeof value === 'string') return hexToBytes(value);
+    if (typeof value === 'number') return numberToScriptInt(value);
+    throw new Error('Tipo não suportado na stack');
+  }
+
+  /** Retorna representação legível para visualização */
+  toDisplay(value) {
+    if (value instanceof Uint8Array) return bytesToHex(value);
+    return String(value);
+  }
+}
+
+// ===== Utilitários hex/bytes =====
+function hexToBytes(hex) {
+  hex = hex.replace(/^0x/, '').replace(/\s/g, '');
+  if (hex.length % 2 !== 0) hex = '0' + hex;
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function numberToScriptInt(n) {
+  if (n === 0) return new Uint8Array([0]);
+  const negative = n < 0;
+  let abs = Math.abs(n);
+  const bytes = [];
+  while (abs > 0) {
+    bytes.push(abs & 0xff);
+    abs >>= 8;
+  }
+  if (bytes[bytes.length - 1] & 0x80) {
+    bytes.push(negative ? 0x80 : 0x00);
+  } else if (negative) {
+    bytes[bytes.length - 1] |= 0x80;
+  }
+  return new Uint8Array(bytes);
+}
+
+function scriptIntToNumber(bytes) {
+  if (bytes.length === 0) return 0;
+  const negative = (bytes[bytes.length - 1] & 0x80) !== 0;
+  let result = 0;
+  for (let i = bytes.length - 1; i >= 0; i--) {
+    result = (result << 8) | bytes[i];
+  }
+  if (negative) {
+    result &= ~(0x80 << ((bytes.length - 1) * 8));
+    result = -result;
+  }
+  return result;
+}
+
+/**
+ * Opcode - Catálogo de opcodes suportados pela VM
+ * Cada opcode tem: código, nome, função executora e descrição educacional.
+ */
+const OPCODES = {
+  // Constantes
+  OP_0:          { code: 0x00, name: 'OP_0',          pushData: null },
+  OP_FALSE:      { code: 0x00, name: 'OP_FALSE',      pushData: null },
+  OP_1:          { code: 0x51, name: 'OP_1',          pushData: null },
+  OP_TRUE:       { code: 0x51, name: 'OP_TRUE',       pushData: null },
+
+  // Fluxo
+  OP_NOP:        { code: 0x61, name: 'OP_NOP',        pushData: null },
+  OP_VERIFY:     { code: 0x69, name: 'OP_VERIFY',     pushData: null },
+  OP_RETURN:     { code: 0x6a, name: 'OP_RETURN',     pushData: null },
+
+  // Pilha
+  OP_DUP:        { code: 0x76, name: 'OP_DUP',        pushData: null },
+  OP_DROP:       { code: 0x75, name: 'OP_DROP',       pushData: null },
+  OP_SWAP:       { code: 0x7c, name: 'OP_SWAP',       pushData: null },
+  OP_ROT:        { code: 0x7b, name: 'OP_ROT',        pushData: null },
+
+  // Bitwise / Igualdade
+  OP_EQUAL:      { code: 0x87, name: 'OP_EQUAL',      pushData: null },
+  OP_EQUALVERIFY:{ code: 0x88, name: 'OP_EQUALVERIFY',pushData: null },
+
+  // Crypto
+  OP_RIPEMD160:  { code: 0xa6, name: 'OP_RIPEMD160',  pushData: null },
+  OP_SHA256:     { code: 0xa8, name: 'OP_SHA256',     pushData: null },
+  OP_HASH160:    { code: 0xa9, name: 'OP_HASH160',    pushData: null },
+  OP_HASH256:    { code: 0xaa, name: 'OP_HASH256',    pushData: null },
+  OP_CHECKSIG:   { code: 0xac, name: 'OP_CHECKSIG',   pushData: null },
+  OP_CHECKSIGVERIFY: { code: 0xad, name: 'OP_CHECKSIGVERIFY', pushData: null },
+};
+
+// Descrição educacional de cada opcode
+const OPCODE_DESCRIPTIONS = {
+  OP_0: 'Empilha o valor 0 (falso). Também chamado OP_FALSE.',
+  OP_1: 'Empilha o valor 1 (verdadeiro). Também chamado OP_TRUE.',
+  OP_NOP: 'Não faz nada. Usado para preenchimento ou substituição futura.',
+  OP_VERIFY: 'Remove o topo da pilha. Se for falso, aborta a execução com erro.',
+  OP_RETURN: 'Marca a saída como inválida (usado em OP_RETURN outputs para dados).',
+  OP_DUP: 'Duplica o elemento do topo da pilha. Muito usado em P2PKH.',
+  OP_DROP: 'Remove o elemento do topo da pilha.',
+  OP_SWAP: 'Troca os dois elementos do topo da pilha.',
+  OP_ROT: 'Move o 3º elemento do topo para o topo.',
+  OP_EQUAL: 'Compara os dois elementos do topo. Empilha 1 se iguais, 0 caso contrário.',
+  OP_EQUALVERIFY: 'Igual ao OP_EQUAL mas usa OP_VERIFY — aborta se não forem iguais.',
+  OP_RIPEMD160: 'Calcula o hash RIPEMD-160 do topo da pilha.',
+  OP_SHA256: 'Calcula o hash SHA-256 do topo da pilha.',
+  OP_HASH160: 'SHA-256 seguido de RIPEMD-160. Usado para gerar endereços Bitcoin.',
+  OP_HASH256: 'Duplo SHA-256. Usado para calcular TxID e blocos.',
+  OP_CHECKSIG: 'Verifica assinatura ECDSA. Empilha 1 se válida, 0 se inválida.',
+  OP_CHECKSIGVERIFY: 'Verifica assinatura e aborta se inválida.',
+};
+
+/**
+ * Parser de script: converte string/hex em lista de instruções
+ */
+class ScriptParser {
+  static parse(scriptString) {
+    const instructions = [];
+    const tokens = scriptString.trim().split(/\s+/);
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      if (!token) continue;
+
+      if (OPCODES[token]) {
+        instructions.push({ type: 'opcode', name: token, data: null });
+      } else if (token.startsWith('0x') || /^[0-9a-fA-F]+$/.test(token)) {
+        // Dado em hex (push de dados)
+        const hex = token.replace(/^0x/, '');
+        instructions.push({ type: 'data', name: 'PUSH_DATA', data: hex });
+      } else {
+        throw new Error(`Token desconhecido: ${token}`);
+      }
+    }
+    return instructions;
+  }
+}
+
+/**
+ * Hash - Implementação do zero de SHA-256 e RIPEMD-160
+ * SHA-256: FIPS 180-4
+ * RIPEMD-160: especificação original
+ */
+
+// ===== SHA-256 =====
+class SHA256 {
+  // Constantes K (primeiros 32 bits das partes fracionárias das raízes cúbicas dos primeiros 64 primos)
+  static K = new Uint32Array([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ]);
+
+  // Valores iniciais H (primeiros 32 bits das partes fracionárias das raízes quadradas dos primeiros 8 primos)
+  static H0 = new Uint32Array([
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+  ]);
+
+  static rotr(n, x) { return (x >>> n) | (x << (32 - n)); }
+  static ch(x, y, z) { return (x & y) ^ (~x & z); }
+  static maj(x, y, z) { return (x & y) ^ (x & z) ^ (y & z); }
+  static sigma0(x) { return this.rotr(2, x) ^ this.rotr(13, x) ^ this.rotr(22, x); }
+  static sigma1(x) { return this.rotr(6, x) ^ this.rotr(11, x) ^ this.rotr(25, x); }
+  static gamma0(x) { return this.rotr(7, x) ^ this.rotr(18, x) ^ (x >>> 3); }
+  static gamma1(x) { return this.rotr(17, x) ^ this.rotr(19, x) ^ (x >>> 10); }
+
+  static hash(message) {
+    // message: Uint8Array
+    const msg = message instanceof Uint8Array ? message : new Uint8Array(message);
+    const bitLength = msg.length * 8;
+
+    // Padding: mensagem + 0x80 + zeros + 8 bytes do tamanho
+    const paddedLength = Math.ceil((msg.length + 9) / 64) * 64;
+    const padded = new Uint8Array(paddedLength);
+    padded.set(msg);
+    padded[msg.length] = 0x80;
+
+    // Tamanho em bits (big-endian, 64 bits) — só usamos os 32 LSB
+    const view = new DataView(padded.buffer);
+    view.setUint32(paddedLength - 4, bitLength, false);
+
+    // Inicializa H
+    const H = new Uint32Array(SHA256.H0);
+
+    // Processa blocos de 512 bits (64 bytes)
+    for (let offset = 0; offset < paddedLength; offset += 64) {
+      const W = new Uint32Array(64);
+      for (let t = 0; t < 16; t++) {
+        W[t] = view.getUint32(offset + t * 4, false);
+      }
+      for (let t = 16; t < 64; t++) {
+        W[t] = (SHA256.gamma1(W[t-2]) + W[t-7] + SHA256.gamma0(W[t-15]) + W[t-16]) | 0;
+      }
+
+      let [a, b, c, d, e, f, g, h] = H;
+
+      for (let t = 0; t < 64; t++) {
+        const T1 = (h + SHA256.sigma1(e) + SHA256.ch(e, f, g) + SHA256.K[t] + W[t]) | 0;
+        const T2 = (SHA256.sigma0(a) + SHA256.maj(a, b, c)) | 0;
+        h = g; g = f; f = e;
+        e = (d + T1) | 0;
+        d = c; c = b; b = a;
+        a = (T1 + T2) | 0;
+      }
+
+      H[0] = (H[0] + a) | 0;
+      H[1] = (H[1] + b) | 0;
+      H[2] = (H[2] + c) | 0;
+      H[3] = (H[3] + d) | 0;
+      H[4] = (H[4] + e) | 0;
+      H[5] = (H[5] + f) | 0;
+      H[6] = (H[6] + g) | 0;
+      H[7] = (H[7] + h) | 0;
+    }
+
+    // Converte para bytes
+    const result = new Uint8Array(32);
+    const resultView = new DataView(result.buffer);
+    for (let i = 0; i < 8; i++) resultView.setUint32(i * 4, H[i], false);
+    return result;
+  }
+
+  static doubleHash(message) {
+    return this.hash(this.hash(message));
+  }
+}
+
+// ===== RIPEMD-160 =====
+class RIPEMD160 {
+  static f(j, x, y, z) {
+    if (j <= 15) return x ^ y ^ z;
+    if (j <= 31) return (x & y) | (~x & z);
+    if (j <= 47) return (x | ~y) ^ z;
+    if (j <= 63) return (x & z) | (y & ~z);
+    return x ^ (y | ~z);
+  }
+
+  static K1 = [0x00000000, 0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xa953fd4e];
+  static K2 = [0x50a28be6, 0x5c4dd124, 0x6d703ef3, 0x7a6d76e9, 0x00000000];
+
+  static R1 = [
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
+    7,4,13,1,10,6,15,3,12,0,9,5,2,14,11,8,
+    3,10,14,4,9,15,8,1,2,7,0,6,13,11,5,12,
+    1,9,11,10,0,8,12,4,13,3,7,15,14,5,6,2,
+    4,0,5,9,7,12,2,10,14,1,3,8,11,6,15,13
+  ];
+
+  static R2 = [
+    5,14,7,0,9,2,11,4,13,6,15,8,1,10,3,12,
+    6,11,3,7,0,13,5,10,14,15,8,12,4,9,1,2,
+    15,5,1,3,7,14,6,9,11,8,12,2,10,0,4,13,
+    8,6,4,1,3,11,15,0,5,12,2,13,9,7,10,14,
+    12,15,10,4,1,5,8,7,6,2,13,14,0,3,9,11
+  ];
+
+  static S1 = [
+    11,14,15,12,5,8,7,9,11,13,14,15,6,7,9,8,
+    7,6,8,13,11,9,7,15,7,12,15,9,11,7,13,12,
+    11,13,6,7,14,9,13,15,14,8,13,6,5,12,7,5,
+    11,12,14,15,14,15,9,8,9,14,5,6,8,6,5,12,
+    9,15,5,11,6,8,13,12,5,12,13,14,11,8,5,6
+  ];
+
+  static S2 = [
+    8,9,9,11,13,15,15,5,7,7,8,11,14,14,12,6,
+    9,13,15,7,12,8,9,11,7,7,12,7,6,15,13,11,
+    9,7,15,11,8,6,6,14,12,13,5,14,13,13,7,5,
+    15,5,8,11,14,14,6,14,6,9,12,9,12,5,15,8,
+    8,5,12,9,12,5,14,6,8,13,6,5,15,13,11,11
+  ];
+
+  static rotl(x, n) { return ((x << n) | (x >>> (32 - n))) >>> 0; }
+
+  static hash(message) {
+    const msg = message instanceof Uint8Array ? message : new Uint8Array(message);
+    const bitLength = msg.length * 8;
+
+    const paddedLength = Math.ceil((msg.length + 9) / 64) * 64;
+    const padded = new Uint8Array(paddedLength);
+    padded.set(msg);
+    padded[msg.length] = 0x80;
+
+    // little-endian 64 bits
+    const view = new DataView(padded.buffer);
+    view.setUint32(paddedLength - 8, bitLength >>> 0, true);
+    view.setUint32(paddedLength - 4, Math.floor(bitLength / 0x100000000), true);
+
+    let h0 = 0x67452301, h1 = 0xefcdab89, h2 = 0x98badcfe, h3 = 0x10325476, h4 = 0xc3d2e1f0;
+
+    for (let offset = 0; offset < paddedLength; offset += 64) {
+      const X = new Uint32Array(16);
+      for (let i = 0; i < 16; i++) X[i] = view.getUint32(offset + i * 4, true);
+
+      let al = h0, bl = h1, cl = h2, dl = h3, el = h4;
+      let ar = h0, br = h1, cr = h2, dr = h3, er = h4;
+
+      for (let j = 0; j < 80; j++) {
+        const round = Math.floor(j / 16);
+        let tl = (al + RIPEMD160.f(j, bl, cl, dl) + X[RIPEMD160.R1[j]] + RIPEMD160.K1[round]) >>> 0;
+        tl = (RIPEMD160.rotl(tl, RIPEMD160.S1[j]) + el) >>> 0;
+        al = el; el = dl; dl = RIPEMD160.rotl(cl, 10); cl = bl; bl = tl;
+
+        let tr = (ar + RIPEMD160.f(79 - j, br, cr, dr) + X[RIPEMD160.R2[j]] + RIPEMD160.K2[round]) >>> 0;
+        tr = (RIPEMD160.rotl(tr, RIPEMD160.S2[j]) + er) >>> 0;
+        ar = er; er = dr; dr = RIPEMD160.rotl(cr, 10); cr = br; br = tr;
+      }
+
+      const t = (h1 + cl + dr) >>> 0;
+      h1 = (h2 + dl + er) >>> 0;
+      h2 = (h3 + el + ar) >>> 0;
+      h3 = (h4 + al + br) >>> 0;
+      h4 = (h0 + bl + cr) >>> 0;
+      h0 = t;
+    }
+
+    const result = new Uint8Array(20);
+    const rv = new DataView(result.buffer);
+    rv.setUint32(0, h0, true);
+    rv.setUint32(4, h1, true);
+    rv.setUint32(8, h2, true);
+    rv.setUint32(12, h3, true);
+    rv.setUint32(16, h4, true);
+    return result;
+  }
+}
+
+// ===== HASH160 e HASH256 (atalhos Bitcoin) =====
+function hash160(data) {
+  return RIPEMD160.hash(SHA256.hash(data));
+}
+
+function hash256(data) {
+  return SHA256.doubleHash(data);
+}
+
+/**
+ * ECDSA - Curva secp256k1 com BigInt (ES2020+)
+ * Implementação didática: geração de chave pública e verificação de assinatura.
+ * NÃO usar em produção — use bibliotecas auditadas.
+ */
+class Secp256k1 {
+  // Parâmetros da curva: y² = x³ + 7 (mod p)
+  static P  = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn;
+  static N  = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
+  static Gx = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798n;
+  static Gy = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8n;
+  static A  = 0n;
+  static B  = 7n;
+
+  static G = { x: Secp256k1.Gx, y: Secp256k1.Gy };
+
+  // Inverso modular via Fermat: a^(p-2) mod p
+  static modInverse(a, m = Secp256k1.P) {
+    a = ((a % m) + m) % m;
+    return Secp256k1.modPow(a, m - 2n, m);
+  }
+
+  static modPow(base, exp, mod) {
+    let result = 1n;
+    base = ((base % mod) + mod) % mod;
+    while (exp > 0n) {
+      if (exp & 1n) result = (result * base) % mod;
+      exp >>= 1n;
+      base = (base * base) % mod;
+    }
+    return result;
+  }
+
+  // Adição de pontos na curva
+  static pointAdd(p1, p2) {
+    if (!p1) return p2;
+    if (!p2) return p1;
+    const { P } = Secp256k1;
+
+    if (p1.x === p2.x && p1.y === p2.y) {
+      // Dobramento
+      if (p1.y === 0n) return null;
+      const slope = (3n * p1.x * p1.x) * Secp256k1.modInverse(2n * p1.y) % P;
+      const x3 = (slope * slope - 2n * p1.x) % P;
+      const y3 = (slope * (p1.x - x3) - p1.y) % P;
+      return { x: (x3 + P) % P, y: (y3 + P) % P };
+    }
+
+    if (p1.x === p2.x) return null; // ponto no infinito
+
+    const slope = ((p2.y - p1.y) * Secp256k1.modInverse(p2.x - p1.x)) % P;
+    const x3 = (slope * slope - p1.x - p2.x) % P;
+    const y3 = (slope * (p1.x - x3) - p1.y) % P;
+    return { x: (x3 + P) % P, y: (y3 + P) % P };
+  }
+
+  // Multiplicação escalar (double-and-add)
+  static pointMultiply(k, point = Secp256k1.G) {
+    k = ((k % Secp256k1.N) + Secp256k1.N) % Secp256k1.N;
+    let result = null;
+    let addend = { ...point };
+
+    while (k > 0n) {
+      if (k & 1n) result = Secp256k1.pointAdd(result, addend);
+      addend = Secp256k1.pointAdd(addend, addend);
+      k >>= 1n;
+    }
+    return result;
+  }
+
+  // Chave pública comprimida (33 bytes): 02/03 + x
+  static publicKeyCompressed(point) {
+    const prefix = (point.y & 1n) === 0n ? 0x02 : 0x03;
+    const xHex = point.x.toString(16).padStart(64, '0');
+    const bytes = new Uint8Array(33);
+    bytes[0] = prefix;
+    const xBytes = hexToBytes(xHex);
+    bytes.set(xBytes, 1);
+    return bytes;
+  }
+
+  // Deriva chave pública a partir de privada (32 bytes)
+  static derivePublicKey(privateKeyBytes) {
+    let k = 0n;
+    for (const b of privateKeyBytes) k = (k << 8n) | BigInt(b);
+    const point = Secp256k1.pointMultiply(k);
+    return Secp256k1.publicKeyCompressed(point);
+  }
+}
+
+class ECDSA {
+  /**
+   * Verifica uma assinatura DER ECDSA.
+   * messageHash: 32 bytes (já com hash duplo aplicado)
+   * publicKey: 33 bytes (comprimida)
+   * signatureDER: DER-encoded signature
+   */
+  static verify(messageHash, publicKey, signatureDER) {
+    const { r, s } = ECDSA.parseDERSignature(signatureDER);
+    const { N, P } = Secp256k1;
+
+    if (r <= 0n || r >= N) return false;
+    if (s <= 0n || s >= N) return false;
+
+    // Decodifica chave pública comprimida
+    const point = ECDSA.decompressPublicKey(publicKey);
+    if (!point) return false;
+
+    // Converte hash para BigInt
+    let z = 0n;
+    for (const b of messageHash) z = (z << 8n) | BigInt(b);
+
+    const sInv = Secp256k1.modInverse(s, N);
+    const u1 = (z * sInv) % N;
+    const u2 = (r * sInv) % N;
+
+    const p1 = Secp256k1.pointMultiply(u1);
+    const p2 = Secp256k1.pointMultiply(u2, point);
+    const R = Secp256k1.pointAdd(p1, p2);
+
+    if (!R) return false;
+    return (R.x % N) === r;
+  }
+
+  /** Decodifica assinatura DER: 30 <len> 02 <rlen> <r> 02 <slen> <s> */
+  static parseDERSignature(der) {
+    if (der[0] !== 0x30) throw new Error('DER inválido');
+    let i = 2;
+    if (der[i] !== 0x02) throw new Error('DER: r marker faltando');
+    i++;
+    const rLen = der[i++];
+    const rBytes = der.slice(i, i + rLen);
+    i += rLen;
+    if (der[i] !== 0x02) throw new Error('DER: s marker faltando');
+    i++;
+    const sLen = der[i++];
+    const sBytes = der.slice(i, i + sLen);
+
+    const toBigInt = (bytes) => {
+      let n = 0n;
+      for (const b of bytes) n = (n << 8n) | BigInt(b);
+      return n;
+    };
+    return { r: toBigInt(rBytes), s: toBigInt(sBytes) };
+  }
+
+  /** Decompõe chave pública comprimida (33 bytes) em ponto (x, y) */
+  static decompressPublicKey(pubkey) {
+    if (pubkey.length !== 33) return null;
+    const prefix = pubkey[0];
+    if (prefix !== 0x02 && prefix !== 0x03) return null;
+
+    const { P } = Secp256k1;
+    let x = 0n;
+    for (let i = 1; i < 33; i++) x = (x << 8n) | BigInt(pubkey[i]);
+
+    // y² = x³ + 7 (mod p)
+    const ySquared = (Secp256k1.modPow(x, 3n, P) + 7n) % P;
+    // y = ySquared^((p+1)/4) mod p  (p ≡ 3 mod 4)
+    let y = Secp256k1.modPow(ySquared, (P + 1n) / 4n, P);
+
+    const isOdd = (y & 1n) === 1n;
+    const wantOdd = prefix === 0x03;
+    if (isOdd !== wantOdd) y = P - y;
+
+    return { x, y };
+  }
+}
+
+/**
+ * Serializer - Conversões entre estruturas e hex (little-endian, compact size)
+ */
+class Serializer {
+  /** Inteiro 32 bits little-endian */
+  static uint32LE(n) {
+    const bytes = new Uint8Array(4);
+    const view = new DataView(bytes.buffer);
+    view.setUint32(0, n, true);
+    return bytes;
+  }
+
+  /** Inteiro 64 bits little-endian (para valor em satoshis) */
+  static uint64LE(n) {
+    const bytes = new Uint8Array(8);
+    const view = new DataView(bytes.buffer);
+    // JS numbers limitados a 53 bits; para valores grandes usar BigInt
+    if (typeof n === 'bigint') {
+      view.setBigUint64(0, n, true);
+    } else {
+      view.setUint32(0, n & 0xffffffff, true);
+      view.setUint32(4, Math.floor(n / 0x100000000), true);
+    }
+    return bytes;
+  }
+
+  /** CompactSize (varint do Bitcoin) */
+  static compactSize(n) {
+    if (n < 0xfd) return new Uint8Array([n]);
+    if (n <= 0xffff) {
+      const b = new Uint8Array(3);
+      b[0] = 0xfd;
+      const v = new DataView(b.buffer);
+      v.setUint16(1, n, true);
+      return b;
+    }
+    if (n <= 0xffffffff) {
+      const b = new Uint8Array(5);
+      b[0] = 0xfe;
+      const v = new DataView(b.buffer);
+      v.setUint32(1, n, true);
+      return b;
+    }
+    throw new Error('CompactSize > 32 bits não suportado');
+  }
+
+  /** Script com prefixo de tamanho */
+  static scriptWithLength(scriptBytes) {
+    const len = Serializer.compactSize(scriptBytes.length);
+    const result = new Uint8Array(len.length + scriptBytes.length);
+    result.set(len, 0);
+    result.set(scriptBytes, len.length);
+    return result;
+  }
+
+  /** Concatena múltiplos Uint8Array */
+  static concat(...arrays) {
+    const total = arrays.reduce((sum, a) => sum + a.length, 0);
+    const result = new Uint8Array(total);
+    let offset = 0;
+    for (const a of arrays) {
+      result.set(a, offset);
+      offset += a.length;
+    }
+    return result;
+  }
+
+  /** Inverte bytes (para TxID: hash exibido em big-endian) */
+  static reverseBytes(bytes) {
+    const r = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) r[i] = bytes[bytes.length - 1 - i];
+    return r;
+  }
+}
+
+/**
+ * Transaction - Modelo de uma transação Bitcoin (Legacy, sem SegWit)
+ */
+class TransactionInput {
+  constructor(txid, vout, scriptSig, sequence = 0xffffffff) {
+    this.txid = txid;           // hex (32 bytes, exibido em big-endian)
+    this.vout = vout;           // índice da saída gasta
+    this.scriptSig = scriptSig; // Uint8Array
+    this.sequence = sequence;
+  }
+}
+
+class TransactionOutput {
+  constructor(valueSatoshis, scriptPubKey) {
+    this.value = valueSatoshis; // número (satoshis)
+    this.scriptPubKey = scriptPubKey; // Uint8Array
+  }
+}
+
+class Transaction {
+  constructor() {
+    this.version = 1;
+    this.inputs = [];
+    this.outputs = [];
+    this.locktime = 0;
+  }
+
+  addInput(input) { this.inputs.push(input); }
+  addOutput(output) { this.outputs.push(output); }
+
+  /** Serializa a transação para bytes (sem SegWit) */
+  serialize() {
+    const parts = [];
+
+    // Version
+    parts.push(Serializer.uint32LE(this.version));
+
+    // Input count + inputs
+    parts.push(Serializer.compactSize(this.inputs.length));
+    for (const input of this.inputs) {
+      // txid em little-endian (inverso da exibição)
+      const txidBytes = Serializer.reverseBytes(hexToBytes(input.txid));
+      parts.push(txidBytes);
+      parts.push(Serializer.uint32LE(input.vout));
+      parts.push(Serializer.scriptWithLength(input.scriptSig));
+      parts.push(Serializer.uint32LE(input.sequence));
+    }
+
+    // Output count + outputs
+    parts.push(Serializer.compactSize(this.outputs.length));
+    for (const output of this.outputs) {
+      parts.push(Serializer.uint64LE(output.value));
+      parts.push(Serializer.scriptWithLength(output.scriptPubKey));
+    }
+
+    // Locktime
+    parts.push(Serializer.uint32LE(this.locktime));
+
+    return Serializer.concat(...parts);
+  }
+
+  /** Calcula o TxID: hash256 da serialização, invertido */
+  getTxId() {
+    const hash = hash256(this.serialize());
+    return bytesToHex(Serializer.reverseBytes(hash));
+  }
+
+  /** Hex completo da transação */
+  toHex() {
+    return bytesToHex(this.serialize());
+  }
+}
+
+/**
+ * Constrói um scriptPubKey P2PKH a partir de um hash160 de chave pública
+ * OP_DUP OP_HASH160 <20 bytes> OP_EQUALVERIFY OP_CHECKSIG
+ */
+function buildP2PKHScript(pubKeyHash160) {
+  return Serializer.concat(
+    new Uint8Array([OPCODES.OP_DUP.code, OPCODES.OP_HASH160.code, 0x14]),
+    pubKeyHash160,
+    new Uint8Array([OPCODES.OP_EQUALVERIFY.code, OPCODES.OP_CHECKSIG.code])
+  );
+}
+
+/**
+ * Constrói scriptSig: <signature DER + sighash> <pubkey>
+ */
+function buildScriptSig(signatureDER, publicKey) {
+  const sigWithHashtype = Serializer.concat(signatureDER, new Uint8Array([0x01])); // SIGHASH_ALL
+  return Serializer.concat(
+    Serializer.scriptWithLength(sigWithHashtype).slice(1), // só o push (sem o length prefix para concat manual)
+    // Na verdade precisamos do formato: <len><sig> <len><pubkey>
+    new Uint8Array(0)
+  );
+}
+
+/** Versão correta: retorna o scriptSig já com pushes */
+function buildScriptSigRaw(signatureDER, publicKey) {
+  const sigWithHashtype = Serializer.concat(signatureDER, new Uint8Array([0x01]));
+  const pushSig = Serializer.concat(
+    Serializer.compactSize(sigWithHashtype.length),
+    sigWithHashtype
+  );
+  const pushPub = Serializer.concat(
+    Serializer.compactSize(publicKey.length),
+    publicKey
+  );
+  return Serializer.concat(pushSig, pushPub);
+}
+
+/**
+ * VM - Máquina Virtual do Bitcoin Script
+ * Executa instruções passo a passo sobre uma Stack.
+ */
+class ScriptVM {
+  constructor() {
+    this.stack = new Stack();
+    this.instructions = [];
+    this.ip = 0; // instruction pointer
+    this.history = []; // snapshots para "Previous"
+    this.log = [];
+    this.listeners = { log: [], step: [], done: [] };
+  }
+
+  on(event, callback) {
+    if (this.listeners[event]) this.listeners[event].push(callback);
+  }
+
+  _emit(event, data) {
+    (this.listeners[event] || []).forEach(cb => cb(data));
+  }
+
+  load(scriptString) {
+    this.instructions = ScriptParser.parse(scriptString);
+    this.ip = 0;
+    this.stack.clear();
+    this.history = [];
+    this._emit('log', { type: 'info', message: `Script carregado: ${this.instructions.length} instruções` });
+  }
+
+  /** Carrega dados iniciais na pilha (ex: assinatura + pubkey para P2PKH) */
+  preloadStack(items) {
+    for (const item of items) this.stack.push(item);
+  }
+
+  /** Executa um passo */
+  step() {
+    if (this.ip >= this.instructions.length) {
+      this._emit('done', { success: this._checkFinalStack() });
+      return false;
+    }
+
+    // Salva snapshot para "Previous"
+    this.history.push({
+      ip: this.ip,
+      stackSnapshot: [...this.stack.items.map(b => new Uint8Array(b))]
+    });
+
+    const instruction = this.instructions[this.ip];
+    this._emit('step', { ip: this.ip, instruction });
+
+    try {
+      if (instruction.type === 'data') {
+        this.stack.push(instruction.data);
+        this._emit('log', { type: 'info', message: `PUSH 0x${instruction.data}` });
+      } else {
+        this._executeOpcode(instruction.name);
+      }
+      this.ip++;
+      return true;
+    } catch (error) {
+      this._emit('log', { type: 'error', message: `Erro em ${instruction.name}: ${error.message}` });
+      this._emit('done', { success: false, error: error.message });
+      return false;
+    }
+  }
+
+  /** Volta um passo */
+  previous() {
+    if (this.history.length === 0) return false;
+    const prev = this.history.pop();
+    this.ip = prev.ip;
+    this.stack.items = prev.stackSnapshot;
+    this._emit('log', { type: 'warn', message: `← Voltou para instrução ${prev.ip}` });
+    this._emit('step', { ip: this.ip, instruction: this.instructions[this.ip] });
+    return true;
+  }
+
+  _executeOpcode(name) {
+    const stack = this.stack;
+    this._emit('log', { type: 'info', message: `Executando ${name}` });
+
+    switch (name) {
+      case 'OP_0':
+      case 'OP_FALSE':
+        stack.push(new Uint8Array([0]));
+        break;
+
+      case 'OP_1':
+      case 'OP_TRUE':
+        stack.push(new Uint8Array([1]));
+        break;
+
+      case 'OP_NOP':
+        break;
+
+      case 'OP_DUP': {
+        const top = stack.peek();
+        if (!top) throw new Error('OP_DUP requer pilha não vazia');
+        stack.push(new Uint8Array(top));
+        break;
+      }
+
+      case 'OP_DROP':
+        stack.pop();
+        break;
+
+      case 'OP_SWAP': {
+        const a = stack.pop();
+        const b = stack.pop();
+        stack.push(a);
+        stack.push(b);
+        break;
+      }
+
+      case 'OP_ROT': {
+        const a = stack.pop();
+        const b = stack.pop();
+        const c = stack.pop();
+        stack.push(b);
+        stack.push(a);
+        stack.push(c);
+        break;
+      }
+
+      case 'OP_VERIFY': {
+        const top = stack.pop();
+        if (!stack.castToBool(top)) {
+          throw new Error('OP_VERIFY falhou: topo é falso');
+        }
+        break;
+      }
+
+      case 'OP_EQUAL': {
+        const a = stack.pop();
+        const b = stack.pop();
+        const equal = bytesToHex(a) === bytesToHex(b);
+        stack.push(equal ? new Uint8Array([1]) : new Uint8Array([0]));
+        this._emit('log', {
+          type: equal ? 'success' : 'warn',
+          message: `OP_EQUAL: ${equal ? 'IGUAIS ✓' : 'diferentes ✗'}`
+        });
+        break;
+      }
+
+      case 'OP_EQUALVERIFY': {
+        const a = stack.pop();
+        const b = stack.pop();
+        const equal = bytesToHex(a) === bytesToHex(b);
+        if (!equal) throw new Error('OP_EQUALVERIFY falhou: valores diferentes');
+        break;
+      }
+
+      case 'OP_RETURN':
+        throw new Error('OP_RETURN: execução inválida intencionalmente');
+
+      case 'OP_SHA256': {
+        const data = stack.pop();
+        stack.push(SHA256.hash(data));
+        this._emit('log', { type: 'info', message: 'SHA-256 aplicado' });
+        break;
+      }
+
+      case 'OP_RIPEMD160': {
+        const data = stack.pop();
+        stack.push(RIPEMD160.hash(data));
+        this._emit('log', { type: 'info', message: 'RIPEMD-160 aplicado' });
+        break;
+      }
+
+      case 'OP_HASH160': {
+        const data = stack.pop();
+        stack.push(hash160(data));
+        this._emit('log', { type: 'info', message: 'HASH160 (SHA256 + RIPEMD160) aplicado' });
+        break;
+      }
+
+      case 'OP_HASH256': {
+        const data = stack.pop();
+        stack.push(hash256(data));
+        this._emit('log', { type: 'info', message: 'HASH256 (duplo SHA256) aplicado' });
+        break;
+      }
+
+      case 'OP_CHECKSIG': {
+        const pubkey = stack.pop();
+        const sigWithHash = stack.pop();
+        // Simplificação educacional: sem sighash completo, usamos hash fixo
+        const sig = sigWithHash.slice(0, sigWithHash.length - 1);
+        const messageHash = new Uint8Array(32).fill(0xab); // placeholder didático
+        try {
+          const valid = ECDSA.verify(messageHash, pubkey, sig);
+          stack.push(valid ? new Uint8Array([1]) : new Uint8Array([0]));
+          this._emit('log', {
+            type: valid ? 'success' : 'error',
+            message: `OP_CHECKSIG: assinatura ${valid ? 'VÁLIDA ✓' : 'INVÁLIDA ✗'}`
+          });
+        } catch (e) {
+          stack.push(new Uint8Array([0]));
+          this._emit('log', { type: 'error', message: `OP_CHECKSIG erro: ${e.message}` });
+        }
+        break;
+      }
+
+      case 'OP_CHECKSIGVERIFY': {
+        const pubkey = stack.pop();
+        const sigWithHash = stack.pop();
+        const sig = sigWithHash.slice(0, sigWithHash.length - 1);
+        const messageHash = new Uint8Array(32).fill(0xab);
+        const valid = ECDSA.verify(messageHash, pubkey, sig);
+        if (!valid) throw new Error('OP_CHECKSIGVERIFY: assinatura inválida');
+        break;
+      }
+
+      default:
+        throw new Error(`Opcode não implementado: ${name}`);
+    }
+  }
+
+  _checkFinalStack() {
+    if (this.stack.isEmpty()) return false;
+    return this.stack.castToBool(this.stack.top());
+  }
+
+  reset() {
+    this.ip = 0;
+    this.stack.clear();
+    this.history = [];
+    this._emit('log', { type: 'warn', message: 'VM reiniciada' });
+  }
+}
+
+/**
+ * Animation - Efeitos visuais para stack (canvas) e pipeline de hash (SVG)
+ */
+class StackVisualizer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.items = [];
+    this.animatingItems = [];
+    this.loopId = null;
+    this.startLoop();
+  }
+
+  startLoop() {
+    const render = () => {
+      this.draw();
+      this.loopId = requestAnimationFrame(render);
+    };
+    render();
+  }
+
+  stop() {
+    if (this.loopId) cancelAnimationFrame(this.loopId);
+  }
+
+  setItems(items) {
+    this.items = items.map(b => new Uint8Array(b));
+  }
+
+  /** Adiciona item com animação de entrada */
+  animatePush(item) {
+    this.animatingItems.push({
+      item: new Uint8Array(item),
+      startY: -40,
+      targetY: 0,
+      progress: 0,
+      type: 'push'
+    });
+    // Após animação, adiciona na lista principal
+    setTimeout(() => {
+      this.items.push(new Uint8Array(item));
+      this.animatingItems = this.animatingItems.filter(a => a.type !== 'push');
+    }, 300);
+  }
+
+  draw() {
+    const { ctx, canvas } = this;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fundo com grade
+    ctx.fillStyle = '#0b0f14';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = 'rgba(255,153,0,0.1)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < canvas.height; y += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    // Desenha itens da pilha (de baixo para cima)
+    const itemHeight = 50;
+    const padding = 10;
+    const baseY = canvas.height - padding;
+
+    for (let i = 0; i < this.items.length; i++) {
+      const y = baseY - (i + 1) * itemHeight;
+      this._drawItem(this.items[i], y, itemHeight, i === this.items.length - 1);
+    }
+
+    // Animações ativas
+    for (const anim of this.animatingItems) {
+      anim.progress = Math.min(1, anim.progress + 0.08);
+      const currentY = baseY - itemHeight + anim.startY * (1 - anim.progress);
+      this._drawItem(anim.item, currentY, itemHeight, true);
+    }
+
+    // Rótulo "Topo"
+    if (this.items.length > 0) {
+      ctx.fillStyle = '#ff9900';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText('TOPO →', 5, baseY - this.items.length * itemHeight + 25);
+    }
+
+    // Rótulo "Vazio"
+    if (this.items.length === 0) {
+      ctx.fillStyle = '#8a95a5';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('[ pilha vazia ]', canvas.width / 2, canvas.height / 2);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  _drawItem(bytes, y, height, isTop) {
+    const { ctx, canvas } = this;
+    const margin = 15;
+    const width = canvas.width - margin * 2;
+
+    // Fundo
+    ctx.fillStyle = isTop ? 'rgba(46,204,113,0.25)' : 'rgba(46,204,113,0.12)';
+    ctx.fillRect(margin, y, width, height - 4);
+
+    // Borda
+    ctx.strokeStyle = isTop ? '#2ecc71' : 'rgba(46,204,113,0.5)';
+    ctx.lineWidth = isTop ? 2 : 1;
+    ctx.strokeRect(margin, y, width, height - 4);
+
+    // Texto hex (truncado)
+    const hex = bytesToHex(bytes);
+    const display = hex.length > 20 ? hex.slice(0, 18) + '…' : hex;
+    ctx.fillStyle = '#e0e6ed';
+    ctx.font = '11px monospace';
+    ctx.fillText(display, margin + 6, y + 18);
+
+    // Tamanho
+    ctx.fillStyle = '#8a95a5';
+    ctx.font = '10px monospace';
+    ctx.fillText(`${bytes.length}B`, margin + 6, y + 34);
+
+    // ASCII (se imprimível)
+    let ascii = '';
+    for (const b of bytes.slice(0, 10)) {
+      ascii += (b >= 32 && b < 127) ? String.fromCharCode(b) : '.';
+    }
+    if (ascii) {
+      ctx.fillStyle = '#3498db';
+      ctx.fillText(ascii, width - 80, y + 34);
+    }
+  }
+}
+
+class HashPipelineVisualizer {
+  constructor(svg) {
+    this.svg = svg;
+  }
+
+  render(steps, activeIndex = -1) {
+    this.svg.innerHTML = '';
+    const ns = 'http://www.w3.org/2000/svg';
+    const stepWidth = 90;
+    const startX = 10;
+
+    steps.forEach((step, i) => {
+      const x = startX + i * stepWidth;
+      const active = i === activeIndex;
+      const done = i < activeIndex;
+
+      // Caixa
+      const rect = document.createElementNS(ns, 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', 30);
+      rect.setAttribute('width', 80);
+      rect.setAttribute('height', 50);
+      rect.setAttribute('rx', 4);
+      rect.setAttribute('fill', active ? '#ff9900' : done ? '#2ecc71' : '#151b22');
+      rect.setAttribute('stroke', active ? '#ff9900' : '#3498db');
+      rect.setAttribute('stroke-width', 2);
+      this.svg.appendChild(rect);
+
+      // Texto
+      const text = document.createElementNS(ns, 'text');
+      text.setAttribute('x', x + 40);
+      text.setAttribute('y', 58);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('fill', active ? '#0b0f14' : '#e0e6ed');
+      text.setAttribute('font-size', '11');
+      text.setAttribute('font-family', 'monospace');
+      text.setAttribute('font-weight', 'bold');
+      text.textContent = step.label;
+      this.svg.appendChild(text);
+
+      // Seta
+      if (i < steps.length - 1) {
+        const arrow = document.createElementNS(ns, 'path');
+        const ax = x + 82;
+        arrow.setAttribute('d', `M${ax},55 L${ax + 6},55 M${ax + 3},52 L${ax + 6},55 L${ax + 3},58`);
+        arrow.setAttribute('stroke', done ? '#2ecc71' : '#3498db');
+        arrow.setAttribute('stroke-width', 2);
+        arrow.setAttribute('fill', 'none');
+        this.svg.appendChild(arrow);
+      }
+    });
+  }
+}
+
+/**
+ * Script principal - Orquestra a aplicação
+ */
+(function() {
+  'use strict';
+
+  // ===== Instâncias globais =====
+  const vm = new ScriptVM();
+  let stackViz = null;
+  let hashViz = null;
+  let autoRunInterval = null;
+  let currentTransaction = null;
+
+  // ===== Exemplos didáticos =====
+  const EXAMPLE_SCRIPTSIG = '0x3044022047ac8e878352d3ebbde1c94ce3a10d057c24175747116f8288e5d794d12d482f0220217f36a485cae903c713331d877c1f64677e3622ad4010726870540656fe9dcb01 0x03ad1d8e89212f0b92c74d23bb710c00662ad1470198ac48c43f7d6f93a2a26873';
+  const EXAMPLE_PUBKEY_HASH = '0x3e0547468b67c509bc8bb1b7d57f1bde5670f5cae0';
+
+  // ===== Inicialização =====
+  function init() {
+    stackViz = new StackVisualizer(document.getElementById('stack-canvas'));
+    hashViz = new HashPipelineVisualizer(document.getElementById('hash-svg'));
+
+    // Conecta eventos da VM
+    vm.on('log', addLog);
+    vm.on('step', onStep);
+    vm.on('done', onDone);
+    vm.stack.onChange(() => updateStackView());
+
+    setupControls();
+    setupTransactionBuilder();
+    setupTabs();
+    loadExampleP2PKH();
+    renderHashPipeline(-1);
+
+    addLog({ type: 'info', message: '🪙 Bitcoin Script VM inicializada. Clique em Next ou Run.' });
+  }
+
+  // ===== Controles de execução =====
+  function setupControls() {
+    document.getElementById('btn-run').addEventListener('click', runAll);
+    document.getElementById('btn-pause').addEventListener('click', pauseRun);
+    document.getElementById('btn-next').addEventListener('click', () => vm.step());
+    document.getElementById('btn-prev').addEventListener('click', () => vm.previous());
+    document.getElementById('btn-reset').addEventListener('click', resetVM);
+
+    const speedInput = document.getElementById('speed');
+    speedInput.addEventListener('input', () => {
+      document.getElementById('speed-value').textContent = speedInput.value + 'ms';
+    });
+  }
+
+  function runAll() {
+    pauseRun();
+    const speed = parseInt(document.getElementById('speed').value);
+    autoRunInterval = setInterval(() => {
+      const continued = vm.step();
+      if (!continued) pauseRun();
+    }, speed);
+  }
+
+  function pauseRun() {
+    if (autoRunInterval) {
+      clearInterval(autoRunInterval);
+      autoRunInterval = null;
+    }
+  }
+
+  function resetVM() {
+    pauseRun();
+    vm.reset();
+    renderOpcodeList();
+    updateStackView();
+    document.getElementById('current-opcode').textContent = '—';
+    document.getElementById('opcode-name').textContent = '—';
+    document.getElementById('opcode-desc').textContent = 'Selecione um opcode para ver a descrição.';
+  }
+
+  // ===== Construtor de transação =====
+  function setupTransactionBuilder() {
+    document.getElementById('btn-add-input').addEventListener('click', () => addInputRow());
+    document.getElementById('btn-add-output').addEventListener('click', () => addOutputRow());
+    document.getElementById('btn-serialize').addEventListener('click', serializeTransaction);
+
+    // Input inicial
+    addInputRow();
+    addOutputRow();
+  }
+
+  function addInputRow() {
+    const container = document.getElementById('inputs-container');
+    const idx = container.children.length;
+    const div = document.createElement('div');
+    div.className = 'tx-item';
+    div.innerHTML = `
+      <div class="row-3">
+        <input type="text" placeholder="txid (64 hex)" value="a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d">
+        <input type="number" placeholder="vout" value="0">
+        <input type="text" placeholder="sequence" value="ffffffff">
+      </div>
+      <input type="text" placeholder="scriptSig (hex)" value="">
+      <button class="remove-btn">Remover</button>
+    `;
+    div.querySelector('.remove-btn').addEventListener('click', () => div.remove());
+    container.appendChild(div);
+  }
+
+  function addOutputRow() {
+    const container = document.getElementById('outputs-container');
+    const div = document.createElement('div');
+    div.className = 'tx-item';
+    div.innerHTML = `
+      <div class="row">
+        <input type="number" placeholder="valor (satoshis)" value="1000000">
+        <input type="text" placeholder="scriptPubKey (hex)" value="76a91489abcdefabbaabbaabbaabbaabbaabbaabbaabba88ac">
+      </div>
+      <button class="remove-btn">Remover</button>
+    `;
+    div.querySelector('.remove-btn').addEventListener('click', () => div.remove());
+    container.appendChild(div);
+  }
+
+  function serializeTransaction() {
+    try {
+      const tx = new Transaction();
+      tx.version = parseInt(document.getElementById('tx-version').value, 16) || 1;
+      tx.locktime = parseInt(document.getElementById('tx-locktime').value, 16) || 0;
+
+      document.querySelectorAll('#inputs-container .tx-item').forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        const scriptSigHex = inputs[3].value.trim();
+        tx.addInput(new TransactionInput(
+          inputs[0].value.trim(),
+          parseInt(inputs[1].value) || 0,
+          scriptSigHex ? hexToBytes(scriptSigHex) : new Uint8Array(0),
+          parseInt(inputs[2].value, 16) || 0xffffffff
+        ));
+      });
+
+      document.querySelectorAll('#outputs-container .tx-item').forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        tx.addOutput(new TransactionOutput(
+          parseInt(inputs[0].value) || 0,
+          hexToBytes(inputs[1].value.trim())
+        ));
+      });
+
+      currentTransaction = tx;
+      const hex = tx.toHex();
+      document.getElementById('tx-hex').textContent = hex;
+      addLog({ type: 'success', message: `Transação serializada: ${hex.length / 2} bytes` });
+      addLog({ type: 'info', message: `TxID: ${tx.getTxId()}` });
+
+      renderHashPipeline(3);
+    } catch (e) {
+      addLog({ type: 'error', message: `Erro ao serializar: ${e.message}` });
+    }
+  }
+
+  // ===== Tabs de script =====
+  function setupTabs() {
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        switch (tab.dataset.tab) {
+          case 'scriptSig': loadScriptSig(); break;
+          case 'scriptPubKey': loadScriptPubKey(); break;
+          case 'combined': loadCombined(); break;
+        }
+      });
+    });
+  }
+
+  function loadExampleP2PKH() {
+    loadScriptSig();
+  }
+
+  function loadScriptSig() {
+    vm.load(EXAMPLE_SCRIPTSIG);
+    renderOpcodeList();
+  }
+
+  function loadScriptPubKey() {
+    vm.load(`OP_DUP OP_HASH160 ${EXAMPLE_PUBKEY_HASH} OP_EQUALVERIFY OP_CHECKSIG`);
+    renderOpcodeList();
+  }
+
+  function loadCombined() {
+    vm.load(`${EXAMPLE_SCRIPTSIG} OP_DUP OP_HASH160 ${EXAMPLE_PUBKEY_HASH} OP_EQUALVERIFY OP_CHECKSIG`);
+    renderOpcodeList();
+  }
+
+  // ===== Renderização =====
+  function renderOpcodeList() {
+    const list = document.getElementById('opcode-list');
+    list.innerHTML = '';
+    vm.instructions.forEach((instr, i) => {
+      const div = document.createElement('div');
+      div.className = 'opcode-item';
+      div.dataset.index = i;
+      div.innerHTML = `
+        <span class="op-name">${instr.name}</span>
+        ${instr.data ? `<span class="op-data">${instr.data.slice(0, 16)}${instr.data.length > 16 ? '…' : ''}</span>` : ''}
+      `;
+      div.addEventListener('click', () => showOpcodeInfo(instr.name));
+      list.appendChild(div);
+    });
+  }
+
+  function showOpcodeInfo(name) {
+    document.getElementById('opcode-name').textContent = name;
+    document.getElementById('opcode-desc').textContent =
+      OPCODE_DESCRIPTIONS[name] || 'Sem descrição disponível.';
+  }
+
+  function updateStackView() {
+    stackViz.setItems(vm.stack.items);
+    const top = vm.stack.top();
+    document.getElementById('stack-top').textContent =
+      top ? bytesToHex(top).slice(0, 16) + '…' : '—';
+
+    // Histórico
+    const hist = document.getElementById('stack-history');
+    hist.innerHTML = '';
+    vm.stack.history.slice(-10).forEach(entry => {
+      const div = document.createElement('div');
+      div.className = `history-entry ${entry.type}`;
+      const data = entry.data ? bytesToHex(entry.data).slice(0, 20) : '';
+      div.textContent = `${entry.type.toUpperCase()} ${data}`;
+      hist.appendChild(div);
+    });
+    hist.scrollTop = hist.scrollHeight;
+  }
+
+  function onStep({ ip, instruction }) {
+    // Destaca opcode atual
+    document.querySelectorAll('.opcode-item').forEach((el, i) => {
+      el.classList.remove('current');
+      if (i < ip) el.classList.add('executed');
+      if (i === ip) el.classList.add('current');
+    });
+
+    document.getElementById('current-opcode').textContent = instruction.name;
+    showOpcodeInfo(instruction.name);
+  }
+
+  function onDone({ success, error }) {
+    if (success) {
+      addLog({ type: 'success', message: '✅ Script executado com SUCESSO. Pilha válida.' });
+    } else {
+      addLog({ type: 'error', message: `❌ Script falhou${error ? ': ' + error : ''}` });
+    }
+  }
+
+  function renderHashPipeline(activeIndex) {
+    hashViz.render([
+      { label: 'Serialize' },
+      { label: 'SHA-256' },
+      { label: 'SHA-256' },
+      { label: 'TxID' }
+    ], activeIndex);
+  }
+
+  function addLog({ type, message }) {
+    const log = document.getElementById('execution-log');
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type} slide-in`;
+    const time = new Date().toLocaleTimeString('pt-BR');
+    entry.textContent = `[${time}] ${message}`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+
+    // Limita histórico visual
+    while (log.children.length > 100) log.removeChild(log.firstChild);
+  }
+
+  // ===== Boot =====
+  document.addEventListener('DOMContentLoaded', init);
+})();
+
+
+              </script>
+                        </body>
+                        </html>
+                    

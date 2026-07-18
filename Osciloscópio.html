@@ -1,0 +1,1090 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body {
+                  background-color: white; /* Ensure the iframe has a white background */
+                }
+
+                
+              </style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osciloscópio SECP256k1 - Precisão 77 Dígitos</title>
+    
+    <!-- Biblioteca decimal.js para precisão arbitrária -->
+    <script src="https://cdn.jsdelivr.net/npm/decimal.js@10.4.3/decimal.min.js"></script>
+    
+<style>
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a24 100%);
+    margin: 0;
+    padding: 20px;
+    color: #00ff00;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+    margin-bottom: 10px;
+    font-size: 24px;
+    letter-spacing: 3px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #00aa00;
+    margin-bottom: 20px;
+    font-size: 12px;
+}
+
+.panel {
+    background-color: #1a1a1f;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 255, 0, 0.1);
+    border: 1px solid #2a4a2a;
+    margin-bottom: 20px;
+}
+
+.panel-title {
+    color: #00ff00;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 1px solid #2a4a2a;
+    padding-bottom: 5px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.input-group label {
+    color: #00aa00;
+    font-size: 12px;
+    min-width: 120px;
+}
+
+input[type="text"], input[type="number"] {
+    background: #0a0a0a;
+    border: 1px solid #00aa00;
+    color: #00ff00;
+    padding: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    border-radius: 4px;
+    flex: 1;
+    min-width: 200px;
+}
+
+button {
+    background: #003300;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 10px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background: #00ff00;
+    color: #000;
+    box-shadow: 0 0 15px #00ff00;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+}
+
+canvas {
+    background-color: #0a0a0a;
+    display: block;
+    border: 1px solid #2a4a2a;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.gears-container {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 5px;
+    padding: 10px;
+}
+
+.gear {
+    background: #0a0a0a;
+    border: 1px solid #2a4a2a;
+    border-radius: 6px;
+    padding: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 9px;
+}
+
+.gear:hover {
+    border-color: #00ff00;
+    box-shadow: 0 0 10px #00ff00;
+}
+
+.gear.selected {
+    border-color: #00ff00;
+    background: #002200;
+    box-shadow: 0 0 15px #00ff00;
+}
+
+.gear-id {
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.gear-cmyk {
+    color: #00aa00;
+    font-size: 8px;
+    margin-top: 2px;
+}
+
+.gear-angle {
+    color: #008800;
+    font-size: 8px;
+}
+
+.info-box {
+    background: #0a0a0a;
+    border: 1px solid #2a4a2a;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 11px;
+    color: #00aa00;
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+.info-box .label {
+    color: #008800;
+    display: inline-block;
+    min-width: 140px;
+}
+
+.info-box .value {
+    color: #00ff00;
+    word-break: break-all;
+}
+
+.status {
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.status.success {
+    background: #003300;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+}
+
+.status.error {
+    background: #330000;
+    border: 1px solid #ff0000;
+    color: #ff0000;
+}
+
+.status.info {
+    background: #001133;
+    border: 1px solid #0088ff;
+    color: #0088ff;
+}
+
+.controls-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-item label {
+    color: #00aa00;
+    font-size: 11px;
+}
+
+input[type="range"] {
+    accent-color: #00ff00;
+    width: 120px;
+}
+
+.value-display {
+    color: #00ff00;
+    font-size: 11px;
+    min-width: 60px;
+}
+
+.spectrum-legend {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 5px;
+    font-size: 10px;
+    color: #00aa00;
+}
+
+.precision-badge {
+    display: inline-block;
+    background: #003300;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: 10px;
+}
+
+@media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .gears-container { grid-template-columns: repeat(5, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>⚡ OSCILOSCÓPIO SECP256k1 ⚡</h1>
+    <div class="subtitle">
+        Sistema BR-Angular • 20 Engrenagens CMYK • Transformada de Fourier • Engenharia Reversa
+        <span class="precision-badge">PRECISÃO 77 DÍGITOS</span>
+    </div>
+
+    <!-- PAINEL DE ENTRADA -->
+    <div class="panel">
+        <div class="panel-title">🔐 Entrada de Chave Privada SECP256k1</div>
+        <div class="input-group">
+            <label>Chave Privada (k):</label>
+            <input type="text" id="privateKeyInput" 
+                   value="12345678901234567890123456789012345678901234567890123456789012345678901234567"
+                   placeholder="Digite um número entre 1 e n-1 (77 dígitos)">
+        </div>
+        <div class="controls-row">
+            <button onclick="processarChave()">▶ PROCESSAR CHAVE</button>
+            <button onclick="gerarChaveAleatoria()">🎲 GERAR ALEATÓRIA</button>
+            <button onclick="aplicarFFT()">📊 APLICAR FFT</button>
+            <button onclick="aplicarEngenhariaReversa()">🔄 ENGENHARIA REVERSA</button>
+            <button onclick="limparTudo()">🗑 LIMPAR</button>
+        </div>
+        <div id="status" class="status info">Aguardando processamento...</div>
+    </div>
+
+    <!-- PAINEL DAS 20 ENGRENAGENS -->
+    <div class="panel">
+        <div class="panel-title">⚙ 20 Engrenagens CMYK (Clique para selecionar)</div>
+        <div class="gears-container" id="gearsContainer"></div>
+        <div class="info-box" id="gearInfo">
+            <div><span class="label">Engrenagem Selecionada:</span> <span class="value">Nenhuma</span></div>
+        </div>
+    </div>
+
+    <!-- OSCILOSCÓPIO PRINCIPAL -->
+    <div class="grid-2">
+        <div class="panel">
+            <div class="panel-title">🎯 Osciloscópio - Engrenagem Selecionada</div>
+            <canvas id="oscilloscopeCanvas" width="600" height="400"></canvas>
+            <div class="controls-row">
+                <div class="control-item">
+                    <label>Velocidade:</label>
+                    <input type="range" id="speed" min="1" max="20" value="5">
+                    <span class="value-display" id="speed-val">5x</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">📈 Sinal Composto (20 Ondas Somadas)</div>
+            <canvas id="compositeCanvas" width="600" height="400"></canvas>
+            <div class="controls-row">
+                <div class="control-item">
+                    <label>Zoom Tempo:</label>
+                    <input type="range" id="timeZoom" min="1" max="100" value="20">
+                    <span class="value-display" id="zoom-val">20x</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESPECTRO FFT -->
+    <div class="panel">
+        <div class="panel-title">📊 Espectro de Frequências (FFT) - 20 Picos Detectados</div>
+        <canvas id="spectrumCanvas" width="1400" height="300"></canvas>
+        <div class="spectrum-legend">
+            <span>🔵 Amplitude (altura dos picos)</span>
+            <span>🟢 Frequências das 20 engrenagens (1Hz a 20Hz)</span>
+            <span>🔴 Fase (posição angular)</span>
+        </div>
+    </div>
+
+    <!-- RESULTADOS DA ENGENHARIA REVERSA -->
+    <div class="panel">
+        <div class="panel-title">🔄 Resultados da Engenharia Reversa (Precisão Total)</div>
+        <div class="grid-3">
+            <div class="info-box">
+                <div><span class="label">y recuperado:</span></div>
+                <div class="value" id="yRecuperado" style="font-size: 10px;">-</div>
+            </div>
+            <div class="info-box">
+                <div><span class="label">x recuperado:</span></div>
+                <div class="value" id="xRecuperado" style="font-size: 10px;">-</div>
+            </div>
+            <div class="info-box">
+                <div><span class="label">k recuperado:</span></div>
+                <div class="value" id="kRecuperado" style="font-size: 10px;">-</div>
+            </div>
+        </div>
+        <div class="info-box">
+            <div><span class="label">Chave Original:</span></div>
+            <div class="value" id="kOriginal" style="font-size: 10px;">-</div>
+        </div>
+        <div class="info-box">
+            <div><span class="label">Status da Recuperação:</span></div>
+            <div class="value" id="statusRecuperacao">-</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================================
+// CONFIGURAÇÃO DO DECIMAL.JS PARA PRECISÃO DE 100 DÍGITOS
+// ============================================================================
+Decimal.set({
+    precision: 100,
+    rounding: Decimal.ROUND_HALF_UP,
+    toExpNeg: -100,
+    toExpPos: 100
+});
+
+// ============================================================================
+// PARÂMETROS DA CURVA SECP256k1
+// ============================================================================
+const SECP256K1_N = new Decimal('115792089237316195423570985008687907852837564279074906326532739068666572494977');
+const ALPHA = new Decimal('46.051701859880913680359829093687284131926785685357');
+
+// ============================================================================
+// ESTADO GLOBAL
+// ============================================================================
+let engrenagens = [];
+let engrenagemSelecionada = 0;
+let sinalComposto = [];
+let espectroFFT = [];
+let chaveOriginal = null;
+let chaveRecuperada = null;
+let yOriginal = null;
+let yRecuperado = null;
+
+// Controles de animação
+let angle = 0;
+let speed = 5;
+let timeZoom = 20;
+let timeOffset = 0;
+
+// ============================================================================
+// FUNÇÃO SIGMOIDE COM DECIMAL.JS
+// ============================================================================
+function sigmoidDecimal(x, alpha) {
+    // σ(x) = 1 / (1 + e^(-α(x - 0.5)))
+    const exponent = alpha.mul(x.sub(0.5)).neg();
+    const expVal = exponent.exp();
+    return new Decimal(1).div(new Decimal(1).add(expVal));
+}
+
+function sigmoidInverseDecimal(y, alpha) {
+    // x = 0.5 - (1/α) * ln((1-y)/y)
+    const ratio = new Decimal(1).sub(y).div(y);
+    const lnRatio = ratio.ln();
+    return new Decimal(0.5).sub(new Decimal(1).div(alpha).mul(lnRatio));
+}
+
+// ============================================================================
+// PROCESSAMENTO DA CHAVE PRIVADA
+// ============================================================================
+function processarChave() {
+    const input = document.getElementById('privateKeyInput').value.trim();
+    
+    try {
+        const k = new Decimal(input);
+        
+        if (k.lte(0) || k.gte(SECP256K1_N)) {
+            setStatus('ERRO: Chave deve estar entre 1 e n-1', 'error');
+            return;
+        }
+
+        chaveOriginal = k;
+        setStatus('Processando chave com precisão de 100 dígitos...', 'info');
+
+        // Normalizar k para [0, 1] com precisão total
+        const x = k.div(SECP256K1_N);
+        
+        // Aplicar sigmoide
+        const y = sigmoidDecimal(x, ALPHA);
+        yOriginal = y;
+
+        // Extrair 80 dígitos decimais
+        const yStr = y.toFixed(80).substring(2); // Remove "0."
+        
+        // Decompor em 20 engrenagens
+        engrenagens = [];
+        for (let i = 0; i < 20; i++) {
+            const start = i * 4;
+            const digits = yStr.substring(start, start + 4).padEnd(4, '0');
+            
+            const C = parseInt(digits[0]);
+            const M = parseInt(digits[1]);
+            const Y = parseInt(digits[2]);
+            const K = parseInt(digits[3]);
+            
+            const valor = C * 1000 + M * 100 + Y * 10 + K;
+            const angulo = (valor / 10000) * 36;
+            const freq = i + 1;
+            
+            engrenagens.push({
+                id: i + 1,
+                CMYK: [C, M, Y, K],
+                valor: valor,
+                angulo: angulo,
+                freq: freq
+            });
+        }
+
+        renderizarEngrenagens();
+        selecionarEngrenagem(0);
+        gerarSinalComposto();
+        aplicarFFT();
+        
+        setStatus('✓ Chave processada com precisão total! 20 engrenagens geradas.', 'success');
+        
+    } catch (e) {
+        setStatus('ERRO: ' + e.message, 'error');
+    }
+}
+
+// ============================================================================
+// FFT (Transformada Rápida de Fourier)
+// ============================================================================
+function fft(signal) {
+    const N = signal.length;
+    
+    if (N <= 1) return signal.map(x => ({ re: x, im: 0 }));
+    
+    // Completar para potência de 2
+    let size = 1;
+    while (size < N) size *= 2;
+    
+    const padded = new Array(size).fill(0).map((_, i) => 
+        i < N ? { re: signal[i], im: 0 } : { re: 0, im: 0 }
+    );
+    
+    return fftRecursive(padded);
+}
+
+function fftRecursive(x) {
+    const N = x.length;
+    
+    if (N === 1) return x;
+    
+    const even = fftRecursive(x.filter((_, i) => i % 2 === 0));
+    const odd = fftRecursive(x.filter((_, i) => i % 2 === 1));
+    
+    const result = new Array(N);
+    
+    for (let k = 0; k < N / 2; k++) {
+        const angle = -2 * Math.PI * k / N;
+        const tRe = Math.cos(angle) * odd[k].re - Math.sin(angle) * odd[k].im;
+        const tIm = Math.cos(angle) * odd[k].im + Math.sin(angle) * odd[k].re;
+        
+        result[k] = {
+            re: even[k].re + tRe,
+            im: even[k].im + tIm
+        };
+        result[k + N / 2] = {
+            re: even[k].re - tRe,
+            im: even[k].im - tIm
+        };
+    }
+    
+    return result;
+}
+
+function aplicarFFT() {
+    if (sinalComposto.length === 0) {
+        gerarSinalComposto();
+    }
+    
+    setStatus('Aplicando FFT...', 'info');
+    
+    // Aplicar FFT
+    const fftResult = fft(sinalComposto);
+    const N = fftResult.length;
+    
+    // Calcular amplitudes e fases
+    espectroFFT = [];
+    for (let i = 0; i < N / 2; i++) {
+        const amplitude = (2 / N) * Math.sqrt(fftResult[i].re ** 2 + fftResult[i].im ** 2);
+        const faseRad = Math.atan2(fftResult[i].im, fftResult[i].re);
+        const faseDeg = (faseRad * 180 / Math.PI + 90 + 360) % 360; // Ajuste seno→cosseno
+        
+        espectroFFT.push({
+            freq: i,
+            amplitude: amplitude,
+            fase: faseDeg
+        });
+    }
+    
+    desenharEspectro();
+    setStatus('✓ FFT aplicada! 20 picos detectados nas frequências das engrenagens.', 'success');
+}
+
+// ============================================================================
+// ENGENHARIA REVERSA COM PRECISÃO TOTAL
+// ============================================================================
+function aplicarEngenhariaReversa() {
+    if (espectroFFT.length === 0) {
+        setStatus('ERRO: Aplique a FFT primeiro!', 'error');
+        return;
+    }
+    
+    setStatus('Aplicando engenharia reversa com precisão de 100 dígitos...', 'info');
+    
+    // Recuperar engrenagens do espectro
+    const engrenagensRecuperadas = [];
+    let yRecStr = '0.';
+    
+    for (let i = 0; i < 20; i++) {
+        const freqIdx = i + 1;
+        const pico = espectroFFT[freqIdx];
+        
+        const valorRecuperado = Math.round(pico.amplitude);
+        const anguloRecuperado = pico.fase;
+        
+        engrenagensRecuperadas.push({
+            id: i + 1,
+            valor: valorRecuperado,
+            angulo: anguloRecuperado
+        });
+        
+        yRecStr += valorRecuperado.toString().padStart(4, '0');
+    }
+    
+    yRecuperado = new Decimal(yRecStr);
+    
+    // Inverter sigmoide com precisão total
+    const xRecuperado = sigmoidInverseDecimal(yRecuperado, ALPHA);
+    
+    // Recuperar k com precisão total
+    const kRecuperado = xRecuperado.mul(SECP256K1_N).round();
+    chaveRecuperada = kRecuperado;
+    
+    // Atualizar UI
+    document.getElementById('yRecuperado').textContent = yRecStr;
+    document.getElementById('xRecuperado').textContent = xRecuperado.toFixed(80);
+    document.getElementById('kRecuperado').textContent = kRecuperado.toFixed(0);
+    document.getElementById('kOriginal').textContent = chaveOriginal ? chaveOriginal.toFixed(0) : '-';
+    
+    const match = kRecuperado.equals(chaveOriginal);
+    const statusEl = document.getElementById('statusRecuperacao');
+    
+    if (match) {
+        statusEl.innerHTML = '<span style="color: #00ff00; font-size: 14px;">✓✓✓ RECUPERAÇÃO PERFEITA ✓✓✓</span><br><span style="color: #00aa00;">Chave privada recuperada com 100% de precisão (77 dígitos)</span>';
+        setStatus('✓✓✓ SUCESSO TOTAL! Chave privada recuperada com precisão de 100 dígitos!', 'success');
+    } else {
+        const diff = chaveOriginal.sub(chaveRecuperado).abs();
+        statusEl.innerHTML = `<span style="color: #ffaa00;">⚠ Recuperação com diferença: ${diff.toFixed(0)}</span>`;
+        setStatus('⚠ Recuperação com pequena diferença', 'info');
+    }
+}
+
+// ============================================================================
+// GERAÇÃO DO SINAL COMPOSTO
+// ============================================================================
+function gerarSinalComposto() {
+    const N = 1024; // Potência de 2 para FFT
+    sinalComposto = new Array(N).fill(0);
+    
+    for (let eng of engrenagens) {
+        const amplitude = eng.valor;
+        const frequencia = eng.freq;
+        const faseRad = eng.angulo * Math.PI / 180;
+        
+        for (let i = 0; i < N; i++) {
+            const t = i / N;
+            sinalComposto[i] += amplitude * Math.sin(2 * Math.PI * frequencia * t + faseRad);
+        }
+    }
+    
+    desenharSinalComposto();
+}
+
+// ============================================================================
+// RENDERIZAÇÃO DAS ENGRENAGENS
+// ============================================================================
+function renderizarEngrenagens() {
+    const container = document.getElementById('gearsContainer');
+    container.innerHTML = '';
+    
+    engrenagens.forEach((eng, idx) => {
+        const div = document.createElement('div');
+        div.className = 'gear' + (idx === engrenagemSelecionada ? ' selected' : '');
+        div.onclick = () => selecionarEngrenagem(idx);
+        
+        div.innerHTML = `
+            <div class="gear-id">E${eng.id}</div>
+            <div class="gear-cmyk">${eng.CMYK.join('')}</div>
+            <div class="gear-angle">${eng.angulo.toFixed(2)}°</div>
+        `;
+        
+        container.appendChild(div);
+    });
+}
+
+function selecionarEngrenagem(idx) {
+    engrenagemSelecionada = idx;
+    
+    document.querySelectorAll('.gear').forEach((el, i) => {
+        el.classList.toggle('selected', i === idx);
+    });
+    
+    const eng = engrenagens[idx];
+    const info = document.getElementById('gearInfo');
+    info.innerHTML = `
+        <div><span class="label">Engrenagem:</span> <span class="value">E${eng.id}</span></div>
+        <div><span class="label">Código CMYK:</span> <span class="value">C=${eng.CMYK[0]} M=${eng.CMYK[1]} Y=${eng.CMYK[2]} K=${eng.CMYK[3]}</span></div>
+        <div><span class="label">Valor Numérico:</span> <span class="value">${eng.valor}</span></div>
+        <div><span class="label">Ângulo:</span> <span class="value">${eng.angulo.toFixed(4)}°</span></div>
+        <div><span class="label">Frequência:</span> <span class="value">${eng.freq} Hz</span></div>
+        <div><span class="label">Amplitude da Onda:</span> <span class="value">${eng.valor}</span></div>
+        <div><span class="label">Fase (radianos):</span> <span class="value">${(eng.angulo * Math.PI / 180).toFixed(6)} rad</span></div>
+    `;
+}
+
+// ============================================================================
+// DESENHO DO OSCILOSCÓPIO (Engrenagem Selecionada)
+// ============================================================================
+function desenharOsciloscopio() {
+    const canvas = document.getElementById('oscilloscopeCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    ctx.clearRect(0, 0, width, height);
+    
+    // Grid
+    ctx.strokeStyle = '#1a331a';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= width; x += width / 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += height / 10) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    if (engrenagens.length === 0) return;
+    
+    const eng = engrenagens[engrenagemSelecionada];
+    const centerY = height / 2;
+    const circleX = 150;
+    const maxRadius = (height / 2 - 30);
+    const radius = maxRadius * (eng.valor / 10000);
+    
+    // Círculo
+    ctx.beginPath();
+    ctx.arc(circleX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#006600';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // 40 segmentos de 0.9°
+    ctx.fillStyle = '#003300';
+    for (let i = 0; i < 40; i++) {
+        const a = i * 0.9 * Math.PI / 180;
+        const x = circleX + radius * Math.cos(a);
+        const y = centerY - radius * Math.sin(a);
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+    
+    // Ponto girando
+    const currentX = circleX + radius * Math.cos(angle);
+    const currentY = centerY - radius * Math.sin(angle);
+    
+    ctx.beginPath();
+    ctx.moveTo(circleX, centerY);
+    ctx.lineTo(currentX, currentY);
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = '#00ff00';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00ff00';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Linha conectando à onda
+    ctx.beginPath();
+    ctx.moveTo(currentX, currentY);
+    ctx.lineTo(circleX + radius + 40, currentY);
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Onda senoidal
+    const waveStartX = circleX + radius + 40;
+    ctx.beginPath();
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#00ff00';
+    
+    const faseRad = eng.angulo * Math.PI / 180;
+    for (let x = waveStartX; x < width - 10; x++) {
+        const t = (x - waveStartX) / 100 + timeOffset;
+        const y = centerY - eng.valor * (maxRadius / 10000) * Math.sin(2 * Math.PI * eng.freq * t / 10 + faseRad);
+        
+        if (x === waveStartX) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Info
+    ctx.fillStyle = '#00ff00';
+    ctx.font = '12px Courier New';
+    ctx.fillText(`E${eng.id} | CMYK: ${eng.CMYK.join('')} | ${eng.valor} | ${eng.angulo.toFixed(2)}° | ${eng.freq}Hz`, 10, 20);
+}
+
+// ============================================================================
+// DESENHO DO SINAL COMPOSTO
+// ============================================================================
+function desenharSinalComposto() {
+    const canvas = document.getElementById('compositeCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    ctx.clearRect(0, 0, width, height);
+    
+    // Grid
+    ctx.strokeStyle = '#1a331a';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= width; x += width / 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += height / 10) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    if (sinalComposto.length === 0) return;
+    
+    const centerY = height / 2;
+    const maxAmp = Math.max(...sinalComposto.map(Math.abs));
+    const scale = (height / 2 - 20) / maxAmp;
+    
+    // Eixo central
+    ctx.beginPath();
+    ctx.moveTo(0, centerY);
+    ctx.lineTo(width, centerY);
+    ctx.strokeStyle = '#2d5a2d';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Sinal
+    ctx.beginPath();
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 5;
+    ctx.shadowColor = '#00ff00';
+    
+    const samplesVisible = Math.floor(width / timeZoom * 10);
+    const startIdx = Math.floor(timeOffset * 100) % sinalComposto.length;
+    
+    for (let x = 0; x < width; x++) {
+        const idx = (startIdx + Math.floor(x * samplesVisible / width)) % sinalComposto.length;
+        const y = centerY - sinalComposto[idx] * scale;
+        
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Info
+    ctx.fillStyle = '#00ff00';
+    ctx.font = '12px Courier New';
+    ctx.fillText(`Sinal Composto: 20 ondas somadas | Amplitude máx: ${maxAmp.toFixed(0)}`, 10, 20);
+}
+
+// ============================================================================
+// DESENHO DO ESPECTRO FFT
+// ============================================================================
+function desenharEspectro() {
+    const canvas = document.getElementById('spectrumCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    ctx.clearRect(0, 0, width, height);
+    
+    // Grid
+    ctx.strokeStyle = '#1a331a';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= width; x += width / 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += height / 10) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    if (espectroFFT.length === 0) return;
+    
+    const maxFreq = 25;
+    const maxAmp = Math.max(...espectroFFT.slice(0, maxFreq).map(s => s.amplitude));
+    const scale = (height - 60) / maxAmp;
+    
+    // Eixo
+    ctx.beginPath();
+    ctx.moveTo(0, height - 30);
+    ctx.lineTo(width, height - 30);
+    ctx.strokeStyle = '#2d5a2d';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Barras do espectro (apenas até 25 Hz para visualização)
+    const barWidth = width / maxFreq;
+    
+    for (let i = 0; i < maxFreq && i < espectroFFT.length; i++) {
+        const s = espectroFFT[i];
+        const x = i * barWidth;
+        const barHeight = s.amplitude * scale;
+        const y = height - 30 - barHeight;
+        
+        // Cor especial para as frequências das engrenagens
+        const isGear = i >= 1 && i <= 20;
+        
+        if (isGear) {
+            const gradient = ctx.createLinearGradient(0, y, 0, height - 30);
+            gradient.addColorStop(0, '#00ff00');
+            gradient.addColorStop(1, '#003300');
+            ctx.fillStyle = gradient;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#00ff00';
+        } else {
+            ctx.fillStyle = '#003333';
+            ctx.shadowBlur = 0;
+        }
+        
+        ctx.fillRect(x + 2, y, barWidth - 4, barHeight);
+        ctx.shadowBlur = 0;
+        
+        // Label da frequência
+        ctx.fillStyle = isGear ? '#00ff00' : '#005555';
+        ctx.font = '10px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${i}Hz`, x + barWidth / 2, height - 15);
+        
+        // Valor da amplitude nas engrenagens
+        if (isGear && s.amplitude > 1) {
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '9px Courier New';
+            ctx.fillText(s.amplitude.toFixed(0), x + barWidth / 2, y - 5);
+        }
+    }
+    
+    ctx.textAlign = 'left';
+    
+    // Título
+    ctx.fillStyle = '#00ff00';
+    ctx.font = '12px Courier New';
+    ctx.fillText('Espectro FFT: 20 picos nas frequências das engrenagens (1Hz a 20Hz)', 10, 15);
+}
+
+// ============================================================================
+// ANIMAÇÃO
+// ============================================================================
+function animate() {
+    angle += (speed * 0.02);
+    if (angle >= 2 * Math.PI) angle -= 2 * Math.PI;
+    
+    timeOffset += speed * 0.001;
+    
+    desenharOsciloscopio();
+    desenharSinalComposto();
+    
+    requestAnimationFrame(animate);
+}
+
+// ============================================================================
+// UTILITÁRIOS
+// ============================================================================
+function setStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+}
+
+function gerarChaveAleatoria() {
+    // Gerar chave aleatória no intervalo [1, n-1] com precisão total
+    let kStr = '';
+    for (let i = 0; i < 77; i++) {
+        kStr += Math.floor(Math.random() * 10);
+    }
+    
+    let k = new Decimal(kStr);
+    k = k.mod(SECP256K1_N.sub(1)).add(1);
+    
+    document.getElementById('privateKeyInput').value = k.toFixed(0);
+    processarChave();
+}
+
+function limparTudo() {
+    engrenagens = [];
+    sinalComposto = [];
+    espectroFFT = [];
+    chaveOriginal = null;
+    chaveRecuperada = null;
+    yOriginal = null;
+    yRecuperado = null;
+    
+    document.getElementById('gearsContainer').innerHTML = '';
+    document.getElementById('gearInfo').innerHTML = '<div><span class="label">Engrenagem Selecionada:</span> <span class="value">Nenhuma</span></div>';
+    document.getElementById('yRecuperado').textContent = '-';
+    document.getElementById('xRecuperado').textContent = '-';
+    document.getElementById('kRecuperado').textContent = '-';
+    document.getElementById('kOriginal').textContent = '-';
+    document.getElementById('statusRecuperacao').textContent = '-';
+    
+    setStatus('Sistema limpo. Aguardando nova chave...', 'info');
+    
+    const ctx1 = document.getElementById('oscilloscopeCanvas').getContext('2d');
+    const ctx2 = document.getElementById('compositeCanvas').getContext('2d');
+    const ctx3 = document.getElementById('spectrumCanvas').getContext('2d');
+    ctx1.clearRect(0, 0, ctx1.canvas.width, ctx1.canvas.height);
+    ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
+    ctx3.clearRect(0, 0, ctx3.canvas.width, ctx3.canvas.height);
+}
+
+// ============================================================================
+// EVENT LISTENERS
+// ============================================================================
+document.getElementById('speed').addEventListener('input', (e) => {
+    speed = parseFloat(e.target.value);
+    document.getElementById('speed-val').textContent = speed + 'x';
+});
+
+document.getElementById('timeZoom').addEventListener('input', (e) => {
+    timeZoom = parseFloat(e.target.value);
+    document.getElementById('zoom-val').textContent = timeZoom + 'x';
+});
+
+// Inicializar
+animate();
+</script>
+</body>
+</html>
+
+
+
+              <script>
+                              Decimal.set({
+    precision: 100,
+    rounding: Decimal.ROUND_HALF_UP,
+    toExpNeg: -100,
+    toExpPos: 100
+});
+
+function sigmoidDecimal(x, alpha) {
+    const exponent = alpha.mul(x.sub(0.5)).neg();
+    const expVal = exponent.exp();
+    return new Decimal(1).div(new Decimal(1).add(expVal));
+}
+
+function sigmoidInverseDecimal(y, alpha) {
+    const ratio = new Decimal(1).sub(y).div(y);
+    const lnRatio = ratio.ln();
+    return new Decimal(0.5).sub(new Decimal(1).div(alpha).mul(lnRatio));
+}
+
+const xRecuperado = sigmoidInverseDecimal(yRecuperado, ALPHA);
+const kRecuperado = xRecuperado.mul(SECP256K1_N).round();
+
+
+              </script>
+                        </body>
+                        </html>
+                    

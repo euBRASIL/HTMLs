@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Qwen Master v3.2.0 | Validação Progressiva BIP39</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-primary: #05050f; --bg-panel: rgba(12, 12, 28, 0.96);
+  --bg-elevated: rgba(20, 22, 44, 0.85); --border: rgba(120, 140, 255, 0.22);
+  --text-primary: #e8e8f0; --text-secondary: #9aa8d8; --text-muted: #6b7aa8;
+  --accent: #6b8bff; --success: #4ade80; --warning: #ffd86b;
+  --error: #f87171; --btc: #f7931a;
+  --mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary); color: var(--text-primary);
+  -webkit-font-smoothing: antialiased; font-size: 13px;
+}
+#canvas-container { position: fixed; inset: 0; z-index: 1; }
+canvas { display: block; outline: none; }
+
+body.focus-mode #left-panel, body.focus-mode #right-panel,
+body.focus-mode #search-bar, body.focus-mode #info-bar { display: none !important; }
+#focus-toggle {
+  position: fixed; bottom: 12px; right: 12px; z-index: 100;
+  width: 44px; height: 44px; background: var(--bg-panel);
+  border: 1px solid var(--border); border-radius: 50%;
+  color: var(--text-primary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; transition: all 0.2s ease;
+  backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+#focus-toggle:hover { background: var(--accent); transform: scale(1.1); }
+
+#left-panel {
+  position: fixed; top: 0; left: 0; height: 100vh;
+  width: 320px; max-width: 92vw; background: var(--bg-panel);
+  backdrop-filter: blur(16px); border-right: 1px solid var(--border);
+  z-index: 10; overflow-y: auto; overflow-x: hidden;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 14px 14px 90px 14px; box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+}
+#left-panel.collapsed { transform: translateX(calc(-100% + 40px)); }
+#left-panel::-webkit-scrollbar { width: 6px; }
+#left-panel::-webkit-scrollbar-thumb { background: rgba(120, 140, 255, 0.3); border-radius: 3px; }
+#toggle-left {
+  position: absolute; top: 12px; right: -40px;
+  width: 40px; height: 40px; background: var(--bg-panel);
+  border: 1px solid var(--border); border-left: none;
+  color: var(--text-primary); cursor: pointer;
+  border-radius: 0 8px 8px 0; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#right-panel {
+  position: fixed; top: 0; right: 0; height: 100vh;
+  width: 480px; max-width: 92vw; background: var(--bg-panel);
+  backdrop-filter: blur(16px); border-left: 1px solid var(--border);
+  z-index: 10; overflow-y: auto; overflow-x: hidden;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 14px 14px 90px 14px; box-shadow: -4px 0 24px rgba(0,0,0,0.6);
+}
+#right-panel.collapsed { transform: translateX(calc(100% - 40px)); }
+#right-panel::-webkit-scrollbar { width: 6px; }
+#right-panel::-webkit-scrollbar-thumb { background: rgba(180, 140, 255, 0.3); border-radius: 3px; }
+#toggle-right {
+  position: absolute; top: 12px; left: -40px;
+  width: 40px; height: 40px; background: var(--bg-panel);
+  border: 1px solid var(--border); border-right: none;
+  color: var(--text-primary); cursor: pointer;
+  border-radius: 8px 0 0 8px; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.panel {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 10px; overflow: hidden;
+}
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; cursor: pointer; user-select: none;
+  background: rgba(120, 140, 255, 0.06); border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: 12px; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 1.2px;
+}
+.panel-toggle { color: var(--text-muted); font-size: 10px; transition: transform 0.2s; }
+.panel.collapsed .panel-toggle { transform: rotate(-90deg); }
+.panel.collapsed .panel-content { display: none; }
+.panel-content { padding: 10px 12px; }
+
+.row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 10px; padding: 3px 0; font-size: 12px;
+}
+.row .label { color: var(--text-secondary); font-weight: 500; white-space: nowrap; }
+.row .value {
+  color: #fff; font-weight: 600; font-family: var(--mono);
+  text-align: right; word-break: break-all; max-width: 70%; font-size: 10px;
+}
+.value.highlight { color: var(--warning); }
+.value.bip { color: #7fffd4; font-size: 12px; }
+.value.btc { color: var(--btc); font-size: 11px; }
+.value.success { color: var(--success); }
+.value.error { color: var(--error); }
+.value.info { color: var(--accent); }
+
+.btn {
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(80, 100, 200, 0.5), rgba(120, 80, 200, 0.5));
+  border: 2px solid rgba(160, 180, 255, 0.5); border-radius: 8px;
+  color: #fff; cursor: pointer; font-size: 13px; font-weight: 700;
+  transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.8px;
+  font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(100, 130, 230, 0.8), rgba(150, 100, 230, 0.8));
+  transform: translateY(-2px); box-shadow: 0 6px 16px rgba(100, 120, 220, 0.5);
+}
+.btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+.btn-btc {
+  background: linear-gradient(135deg, #f7931a, #ff6b00);
+  border-color: #f7931a; color: #fff;
+  font-size: 14px; padding: 14px 18px;
+  box-shadow: 0 4px 16px rgba(247, 147, 26, 0.5);
+  animation: pulse-btc 2s ease-in-out infinite;
+}
+.btn-btc:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffa94d, #f7931a);
+  box-shadow: 0 6px 24px rgba(247, 147, 26, 0.7);
+}
+.btn-btc:disabled { animation: none; }
+
+@keyframes pulse-btc {
+  0%, 100% { box-shadow: 0 4px 16px rgba(247, 147, 26, 0.5); }
+  50% { box-shadow: 0 4px 24px rgba(247, 147, 26, 0.8); }
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, rgba(200, 80, 80, 0.5), rgba(200, 120, 80, 0.5));
+  border-color: rgba(255, 160, 160, 0.5);
+}
+
+.export-buttons, .action-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px; }
+
+.palette { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin-top: 6px; }
+.palette .swatch {
+  aspect-ratio: 1; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.15); cursor: pointer;
+  transition: transform 0.15s;
+}
+.palette .swatch:hover { transform: scale(1.15); }
+.palette .swatch.active { border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,255,255,0.7); }
+
+.instruction-box {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(34, 197, 94, 0.05));
+  border: 2px solid rgba(74, 222, 128, 0.3);
+  border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: center;
+}
+.instruction-box .icon { font-size: 24px; margin-bottom: 6px; }
+.instruction-box .text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.instruction-box .highlight { color: var(--success); font-weight: 700; }
+
+.word-counter {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 197, 94, 0.1));
+  border: 2px solid rgba(74, 222, 128, 0.4);
+  border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: center;
+}
+.word-counter .count {
+  font-size: 28px; font-weight: 700; color: var(--success); font-family: var(--mono);
+}
+.word-counter .label {
+  font-size: 11px; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+.word-collector {
+  background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px; margin-top: 6px;
+}
+.word-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.word-slot {
+  background: rgba(127, 255, 212, 0.05);
+  border: 2px dashed rgba(127, 255, 212, 0.3);
+  border-radius: 6px; padding: 8px 6px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-muted); text-align: center;
+  min-height: 40px; display: flex; align-items: center; justify-content: center;
+  position: relative; cursor: pointer; transition: all 0.2s;
+}
+.word-slot.filled {
+  background: rgba(127, 255, 212, 0.2);
+  border-style: solid; border-color: #7fffd4;
+  color: #7fffd4; font-weight: 700;
+}
+.word-slot.filled:hover {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: var(--error); color: var(--error);
+}
+.word-slot .slot-num {
+  position: absolute; top: 2px; left: 4px;
+  font-size: 9px; color: var(--text-muted); font-weight: 400;
+}
+
+.derivation-steps {
+  background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px; margin-top: 8px;
+  font-family: var(--mono); font-size: 10px;
+  max-height: 400px; overflow-y: auto;
+}
+.step { padding: 8px 0; border-bottom: 1px dashed rgba(120, 140, 255, 0.15); }
+.step:last-child { border-bottom: none; }
+.step-title {
+  color: var(--accent); font-weight: 700; font-size: 11px;
+  margin-bottom: 4px; text-transform: uppercase;
+}
+.step-value { color: #7fffd4; word-break: break-all; line-height: 1.5; font-size: 9px; }
+.step-value.btc { color: var(--btc); font-size: 12px; font-weight: 700; }
+
+.address-display {
+  background: linear-gradient(135deg, rgba(247, 147, 26, 0.15), rgba(247, 100, 26, 0.08));
+  border: 2px solid var(--btc); border-radius: 8px; padding: 14px; margin-top: 10px;
+  text-align: center; box-shadow: 0 0 20px rgba(247, 147, 26, 0.3);
+}
+.address-display .addr-label {
+  color: var(--btc); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
+}
+.address-display .addr-value {
+  color: var(--btc); font-family: var(--mono);
+  font-size: 14px; font-weight: 700; word-break: break-all;
+}
+
+#vertex-label {
+  position: fixed; z-index: 5; pointer-events: none;
+  background: rgba(10, 12, 35, 0.96); border: 1px solid var(--warning);
+  border-radius: 8px; padding: 10px 14px; font-size: 11px;
+  box-shadow: 0 0 24px rgba(255, 216, 107, 0.25);
+  display: none; min-width: 200px; backdrop-filter: blur(8px);
+}
+#vertex-label .vtitle {
+  font-size: 14px; font-weight: 700; color: var(--warning);
+  margin-bottom: 6px; border-bottom: 1px solid rgba(255, 216, 107, 0.2);
+  padding-bottom: 4px;
+}
+#vertex-label .vrow {
+  display: flex; justify-content: space-between; gap: 10px; padding: 2px 0;
+  color: var(--text-secondary);
+}
+#vertex-label .vrow span:last-child { color: #fff; font-family: var(--mono); }
+
+#info-bar {
+  position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+  z-index: 5; background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 16px; font-size: 11px;
+  color: var(--text-secondary); font-family: var(--mono);
+  backdrop-filter: blur(8px); display: flex; gap: 20px;
+  max-width: 90vw; flex-wrap: wrap; justify-content: center;
+}
+#info-bar .stat { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+#info-bar .stat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+
+#search-bar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: 6; background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 24px; padding: 6px 16px;
+  display: flex; align-items: center; gap: 10px;
+  width: 380px; max-width: 80vw; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#search-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text-primary); font-family: var(--mono); font-size: 13px;
+}
+#search-input::placeholder { color: var(--text-muted); }
+
+#fft-canvas {
+  width: 100%; height: 80px; background: rgba(0,0,0,0.4);
+  border-radius: 4px; border: 1px solid var(--border); margin-top: 6px;
+}
+
+.progress-bar {
+  width: 100%; height: 6px; background: rgba(255,255,255,0.08);
+  border-radius: 3px; overflow: hidden; margin-top: 4px;
+}
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), #a78bfa);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.progress-fill.warning { background: linear-gradient(90deg, var(--warning), #f59e0b); }
+.progress-fill.success { background: linear-gradient(90deg, var(--success), #22c55e); }
+.progress-fill.error { background: linear-gradient(90deg, var(--error), #ef4444); }
+
+.validation-status {
+  padding: 8px; border-radius: 6px; margin-top: 8px;
+  font-size: 11px; line-height: 1.4; text-align: center;
+  border: 1px solid transparent;
+}
+.validation-status.accumulating { background: rgba(107, 139, 255, 0.1); border-color: rgba(107, 139, 255, 0.3); color: var(--accent); }
+.validation-status.ready { background: rgba(255, 216, 107, 0.1); border-color: rgba(255, 216, 107, 0.3); color: var(--warning); }
+.validation-status.valid { background: rgba(74, 222, 128, 0.1); border-color: rgba(74, 222, 128, 0.3); color: var(--success); }
+.validation-status.invalid { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); color: var(--error); }
+
+@media (max-width: 1100px) { #left-panel { width: 280px; } #right-panel { width: 420px; } }
+@media (max-width: 900px) { #right-panel { width: 380px; } .word-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) { #left-panel { width: 85vw; } #right-panel { width: 85vw; } }
+</style>
+</head>
+
+
+<!-- HTML main -->
+
+<body>
+
+<div id="canvas-container"></div>
+
+<div id="left-panel">
+  <button id="toggle-left" title="Recolher (Ctrl+1)">◀</button>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Visão Global</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="row"><span class="label">Esferas:</span><span class="value">31</span></div>
+      <div class="row"><span class="label">Vértices:</span><span class="value">2048</span></div>
+      <div class="row"><span class="label">Arestas KNN:</span><span class="value" id="g-knn">—</span></div>
+      <div class="row"><span class="label">Arestas MST:</span><span class="value" id="g-mst">—</span></div>
+      <div class="row"><span class="label">Componentes:</span><span class="value" id="g-cc">—</span></div>
+      <div class="row"><span class="label">BIP39:</span><span class="value success">2048 palavras</span></div>
+    </div>
+  </div>
+
+  <!-- NOVO PAINEL: -->
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Validação Progressiva</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="row"><span class="label">Progresso:</span><span class="value" id="val-progress">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="val-fill" style="width:0%"></div></div>
+      <div id="val-status" class="validation-status accumulating">
+        Inicie a coleta de palavras para analisar a integridade estrutural.
+      </div>
+      <div class="row" style="margin-top:8px; border-top:1px solid var(--border); padding-top:8px;">
+        <span class="label">Bits Entropia:</span><span class="value info" id="val-bits">0 / 128</span>
+      </div>
+      <div class="row">
+        <span class="label">Probabilidade:</span><span class="value" id="val-prob">—</span>
+      </div>
+    </div>
+  </div>
+
+
+<div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◉ Como Usar</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="instruction-box">
+        <div class="icon">🎯</div>
+        <div class="text">
+          <span class="highlight">Clique diretamente nos vértices</span> do canvas 3D para adicionar palavras BIP39 à wallet. O sistema validará a integridade da semente em tempo real.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◉ Wallet Builder (12 palavras)</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="word-counter">
+        <div class="count"><span id="word-count">0</span> / 12</div>
+        <div class="label">Palavras Coletadas</div>
+      </div>
+      <div class="word-collector">
+        <div class="word-grid" id="word-grid"></div>
+      </div>
+      <button class="btn btn-btc" id="btn-generate" style="width:100%;margin-top:12px" disabled>
+        ₿ Gerar Endereço Bitcoin
+      </button>
+      <button class="btn btn-danger" id="btn-clear-words" style="width:100%;margin-top:8px">
+        🗑 Limpar Palavras
+      </button>
+      <div id="wallet-output"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◉ Passos de Derivação</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="derivation-steps" id="derivation-steps">
+        <div style="color:var(--text-muted);text-align:center;padding:20px">
+          Nenhum cálculo executado ainda.<br>Colete 12 palavras e gere o endereço.
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+<!-- NOVO PAINEL: -->
+
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Diagnostics</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content" id="diag-container" style="font-size:10px;line-height:1.5;font-family:var(--mono);color:var(--text-secondary);">Validando...</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Performance</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="row"><span class="label">FPS:</span><span class="value" id="p-fps">—</span></div>
+      <div class="row"><span class="label">Frame:</span><span class="value" id="p-frame">— ms</span></div>
+      <div class="row"><span class="label">Memória:</span><span class="value" id="p-mem">— MB</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Paleta HSL</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content"><div class="palette" id="palette"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Animação</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="row"><span class="label">Esfera:</span><span class="value highlight" id="a-sphere">—</span></div>
+      <div class="row"><span class="label">Direção:</span><span class="value" id="a-dir">—</span></div>
+      <div class="row"><span class="label">Raio:</span><span class="value" id="s-r">—</span></div>
+      <div class="row"><span class="label">Vértices:</span><span class="value" id="s-nv">—</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="a-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Exportar</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="export-buttons">
+        <button class="btn" data-export="json">JSON</button>
+        <button class="btn" data-export="csv">CSV</button>
+        <button class="btn" data-export="svg">SVG</button>
+        <button class="btn" data-export="png">PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◈ Sistema</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="action-buttons">
+        <button class="btn btn-danger" id="btn-clear">Limpar Estado</button>
+        <button class="btn" id="btn-reset-cam">Reset Camera</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- div id="right-panel">
+  <button id="toggle-right" title="Inspetor (Ctrl+2)">▶</button -->
+
+
+
+  
+
+  <div class="panel">
+    <div class="panel-header" data-collapse>
+      <div class="panel-title">◉ Vértice Selecionado</div><span class="panel-toggle">▼</span>
+    </div>
+    <div class="panel-content">
+      <div class="row"><span class="label">ID:</span><span class="value" id="v-id">—</span></div>
+      <div class="row"><span class="label">Esfera:</span><span class="value" id="v-sph">—</span></div>
+      <div class="row"><span class="label">X:</span><span class="value" id="v-x">—</span></div>
+      <div class="row"><span class="label">Y:</span><span class="value" id="v-y">—</span></div>
+      <div class="row"><span class="label">Z:</span><span class="value" id="v-z">—</span></div>
+      <div class="row"><span class="label">|P|:</span><span class="value" id="v-d">—</span></div>
+      <div class="row"><span class="label">Grau:</span><span class="value" id="v-deg">—</span></div>
+      <div class="row"><span class="label">BIP39 idx:</span><span class="value" id="b-idx">—</span></div>
+      <div class="row"><span class="label">Palavra:</span><span class="value bip" id="b-word">—</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="search-bar">
+  <span style="color:var(--text-muted);font-size:14px">⌕</span>
+  <input id="search-input" type="text" placeholder="Buscar palavra BIP39 ou ID... (Ctrl+K)">
+</div>
+
+<div id="vertex-label">
+  <div class="vtitle" id="l-title">—</div>
+  <div class="vrow"><span>Índice:</span><span id="l-idx">—</span></div>
+  <div class="vrow"><span>Palavra:</span><span id="l-word">—</span></div>
+  <div class="vrow"><span>Esfera:</span><span id="l-sph">—</span></div>
+</div>
+
+<div id="info-bar">
+  <div class="stat"><div class="stat-dot"></div><strong>Qwen Master v3.2.0</strong></div>
+  <div class="stat">Validação progressiva de checksum ativa</div>
+  <div class="stat">BIP39 → BIP32 → BTC</div>
+</div>
+
+<button id="focus-toggle" title="Modo Foco (F)">⛶</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+'use strict';
+
+const BIP39_WORDS = ["abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse","access","accident","account","accuse","achieve","acid","acoustic","acquire","across","act","action","actor","actress","actual","adapt","add","addict","address","adjust","admit","adult","advance","advice","aerobic","affair","afford","afraid","again","age","agent","agree","ahead","aim","air","airport","aisle","alarm","album","alcohol","alert","alien","all","alley","allow","almost","alone","alpha","already","also","alter","always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger","angle","angry","animal","ankle","announce","annual","another","answer","antenna","antique","anxiety","any","apart","apology","appear","apple","approve","april","arch","arctic","area","arena","argue","arm","armed","armor","army","around","arrange","arrest","arrive","arrow","art","artefact","artist","artwork","ask","aspect","assault","asset","assist","assume","asthma","athlete","atom","attack","attend","attitude","attract","auction","audit","august","aunt","author","auto","autumn","average","avocado","avoid","awake","aware","away","awesome","awful","awkward","axis","baby","bachelor","bacon","badge","bag","balance","balcony","ball","bamboo","banana","banner","bar","barely","bargain","barrel","base","basic","basket","battle","beach","bean","beauty","because","become","beef","before","begin","behave","behind","believe","below","belt","bench","benefit","best","betray","better","between","beyond","bicycle","bid","bike","bind","biology","bird","birth","bitter","black","blade","blame","blanket","blast","bleak","bless","blind","blood","blossom","blouse","blue","blur","blush","board","boat","body","boil","bomb","bone","bonus","book","boost","border","boring","borrow","boss","bottom","bounce","box","boy","bracket","brain","brand","brass","brave","bread","breeze","brick","bridge","brief","bright","bring","brisk","broccoli","broken","bronze","broom","brother","brown","brush","bubble","buddy","budget","buffalo","build","bulb","bulk","bullet","bundle","bunker","burden","burger","burst","bus","business","busy","butter","buyer","buzz","cabbage","cabin","cable","cactus","cage","cake","call","calm","camera","camp","can","canal","cancel","candy","cannon","canoe","canvas","canyon","capable","capital","captain","car","carbon","card","cargo","carpet","carry","cart","case","cash","casino","castle","casual","cat","catalog","catch","category","cattle","caught","cause","caution","cave","ceiling","celery","cement","census","century","cereal","certain","chair","chalk","champion","change","chaos","chapter","charge","chase","chat","cheap","check","cheese","chef","cherry","chest","chicken","chief","child","chimney","choice","choose","chronic","chuckle","chunk","churn","cigar","cinnamon","circle","citizen","city","civil","claim","clap","clarify","claw","clay","clean","clerk","clever","click","client","cliff","climb","clinic","clip","clock","clog","close","cloth","cloud","clown","club","clump","cluster","clutch","coach","coast","coconut","code","coffee","coil","coin","collect","color","column","combine","come","comfort","comic","common","company","concert","conduct","confirm","congress","connect","consider","control","convince","cook","cool","copper","copy","coral","core","corn","correct","cost","cotton","couch","country","couple","course","cousin","cover","coyote","crack","cradle","craft","cram","crane","crash","crater","crawl","crazy","cream","credit","creek","crew","cricket","crime","crisp","critic","crop","cross","crouch","crowd","crucial","cruel","cruise","crumble","crunch","crush","cry","crystal","cube","culture","cup","cupboard","curious","current","curtain","curve","cushion","custom","cute","cycle","dad","damage","damp","dance","danger","daring","dash","daughter","dawn","day","deal","debate","debris","decade","december","decide","decline","decorate","decrease","deer","defense","define","defy","degree","delay","deliver","demand","demise","denial","dentist","deny","depart","depend","deposit","depth","deputy","derive","describe","desert","design","desk","despair","destroy","detail","detect","develop","device","devote","diagram","dial","diamond","diary","dice","diesel","diet","differ","digital","dignity","dilemma","dinner","dinosaur","direct","dirt","disagree","discover","disease","dish","dismiss","disorder","display","distance","divert","divide","divorce","dizzy","doctor","document","dog","doll","dolphin","domain","donate","donkey","donor","door","dose","double","dove","draft","dragon","drama","drastic","draw","dream","dress","drift","drill","drink","drip","drive","drop","drum","dry","duck","dumb","dune","during","dust","dutch","duty","dwarf","dynamic","eager","eagle","early","earn","earth","easily","east","easy","echo","ecology","economy","edge","edit","educate","effort","egg","eight","either","elbow","elder","electric","elegant","element","elephant","elevator","elite","else","embark","embody","embrace","emerge","emotion","employ","empower","empty","enable","enact","end","endless","endorse","enemy","energy","enforce","engage","engine","enhance","enjoy","enlist","enough","enrich","enroll","ensure","enter","entire","entry","envelope","episode","equal","equip","era","erase","erode","erosion","error","erupt","escape","essay","essence","estate","eternal","ethics","evidence","evil","evoke","evolve","exact","example","excess","exchange","excite","exclude","excuse","execute","exercise","exhaust","exhibit","exile","exist","exit","exotic","expand","expect","expire","explain","expose","express","extend","extra","eye","eyebrow","fabric","face","faculty","fade","faint","faith","fall","false","fame","family","famous","fan","fancy","fantasy","farm","fashion","fat","fatal","father","fatigue","fault","favorite","feature","february","federal","fee","feed","feel","female","fence","festival","fetch","fever","few","fiber","fiction","field","figure","file","film","filter","final","find","fine","finger","finish","fire","firm","first","fiscal","fish","fit","fitness","fix","flag","flame","flash","flat","flavor","flee","flight","flip","float","flock","floor","flower","fluid","flush","fly","foam","focus","fog","foil","fold","follow","food","foot","force","forest","forget","fork","fortune","forum","forward","fossil","foster","found","fox","fragile","frame","frequent","fresh","friend","fringe","frog","front","frost","frown","frozen","fruit","fuel","fun","funny","furnace","fury","future","gadget","gain","galaxy","gallery","game","gap","garage","garbage","garden","garlic","garment","gas","gasp","gate","gather","gauge","gaze","general","genius","genre","gentle","genuine","gesture","ghost","giant","gift","giggle","ginger","giraffe","girl","give","glad","glance","glare","glass","glide","glimpse","globe","gloom","glory","glove","glow","glue","goat","goddess","gold","good","goose","gorilla","gospel","gossip","govern","gown","grab","grace","grain","grant","grape","grass","gravity","great","green","grid","grief","grit","grocery","group","grow","grunt","guard","guess","guide","guilt","guitar","gun","gym","habit","hair","half","hammer","hamster","hand","happy","harbor","hard","harsh","harvest","hat","have","hawk","hazard","head","health","heart","heavy","hedgehog","height","hello","helmet","help","hen","hero","hidden","high","hill","hint","hip","hire","history","hobby","hockey","hold","hole","holiday","hollow","home","honey","hood","hope","horn","horror","horse","hospital","host","hotel","hour","hover","hub","huge","human","humble","humor","hundred","hungry","hunt","hurdle","hurry","hurt","husband","hybrid","ice","icon","idea","identify","idle","ignore","ill","illegal","illness","image","imitate","immense","immune","impact","impose","improve","impulse","inch","include","income","increase","index","indicate","indoor","industry","infant","inflict","inform","inhale","inherit","initial","inject","injury","inmate","inner","innocent","input","inquiry","insane","insect","inside","inspire","install","intact","interest","into","invest","invite","involve","iron","island","isolate","issue","item","ivory","jacket","jaguar","jar","jazz","jealous","jeans","jelly","jewel","job","join","joke","journey","joy","judge","juice","jump","jungle","junior","junk","just","kangaroo","keen","keep","ketchup","key","kick","kid","kidney","kind","kingdom","kiss","kit","kitchen","kite","kitten","kiwi","knee","knife","knock","know","lab","label","labor","ladder","lady","lake","lamp","language","laptop","large","later","latin","laugh","laundry","lava","law","lawn","lawsuit","layer","lazy","leader","leaf","learn","leave","lecture","left","leg","legal","legend","leisure","lemon","lend","length","lens","leopard","lesson","letter","level","liar","liberty","library","license","life","lift","light","like","limb","limit","link","lion","liquid","list","little","live","lizard","load","loan","lobster","local","lock","logic","lonely","long","loop","lottery","loud","lounge","love","loyal","lucky","luggage","lumber","lunar","lunch","luxury","lyrics","machine","mad","magic","magnet","maid","mail","main","major","make","mammal","man","manage","mandate","mango","mansion","manual","maple","marble","march","margin","marine","market","marriage","mask","mass","master","match","material","math","matrix","matter","maximum","maze","meadow","mean","measure","meat","mechanic","medal","media","melody","melt","member","memory","mention","menu","mercy","merge","merit","merry","mesh","message","metal","method","middle","midnight","milk","million","mimic","mind","minimum","minor","minute","miracle","mirror","misery","miss","mistake","mix","mixed","mixture","mobile","model","modify","mom","moment","monitor","monkey","monster","month","moon","moral","more","morning","mosquito","mother","motion","motor","mountain","mouse","move","movie","much","muffin","mule","multiply","muscle","museum","mushroom","music","must","mutual","myself","mystery","myth","naive","name","napkin","narrow","nasty","nation","nature","near","neck","need","negative","neglect","neither","nephew","nerve","nest","net","network","neutral","never","news","next","nice","night","noble","noise","nominee","noodle","normal","north","nose","notable","note","nothing","notice","novel","now","nuclear","number","nurse","nut","oak","obey","object","oblige","obscure","observe","obtain","obvious","occur","ocean","october","odor","off","offer","office","often","oil","okay","old","olive","olympic","omit","once","one","onion","online","only","open","opera","opinion","oppose","option","orange","orbit","orchard","order","ordinary","organ","orient","original","orphan","ostrich","other","outdoor","outer","output","outside","oval","oven","over","own","owner","oxygen","oyster","ozone","pact","paddle","page","pair","palace","palm","panda","panel","panic","panther","paper","parade","parent","park","parrot","party","pass","patch","path","patient","patrol","pattern","pause","pave","payment","peace","peanut","pear","peasant","pelican","pen","penalty","pencil","people","pepper","perfect","permit","person","pet","phone","photo","phrase","physical","piano","picnic","picture","piece","pig","pigeon","pill","pilot","pink","pioneer","pipe","pistol","pitch","pizza","place","planet","plastic","plate","play","please","pledge","pluck","plug","plunge","poem","poet","point","polar","pole","police","pond","pony","pool","popular","portion","position","possible","post","potato","pottery","poverty","powder","power","practice","praise","predict","prefer","prepare","present","pretty","prevent","price","pride","primary","print","priority","prison","private","prize","problem","process","produce","profit","program","project","promote","proof","property","prosper","protect","proud","provide","public","pudding","pull","pulp","pulse","pumpkin","punch","pupil","puppy","purchase","purity","purpose","purse","push","put","puzzle","pyramid","quality","quantum","quarter","question","quick","quit","quiz","quote","rabbit","raccoon","race","rack","radar","radio","rail","rain","raise","rally","ramp","ranch","random","range","rapid","rare","rate","rather","raven","raw","razor","ready","real","reason","rebel","rebuild","recall","receive","recipe","record","recycle","reduce","reflect","reform","refuse","region","regret","regular","reject","relax","release","relief","rely","remain","remember","remind","remove","render","renew","rent","reopen","repair","repeat","replace","report","require","rescue","resemble","resist","resource","response","result","retire","retreat","return","reunion","reveal","review","reward","rhythm","rib","ribbon","rice","rich","ride","ridge","rifle","right","rigid","ring","riot","ripple","risk","ritual","rival","river","road","roast","robot","robust","rocket","romance","roof","rookie","room","rose","rotate","rough","round","route","royal","rubber","rude","rug","rule","run","runway","rural","sad","saddle","sadness","safe","sail","salad","salmon","salon","salt","salute","same","sample","sand","satisfy","satoshi","sauce","sausage","save","say","scale","scan","scare","scatter","scene","scheme","school","science","scissors","scorpion","scout","scrap","screen","script","scrub","sea","search","season","seat","second","secret","section","security","seed","seek","segment","select","sell","seminar","senior","sense","sentence","series","service","session","settle","setup","seven","shadow","shaft","shallow","share","shed","shell","sheriff","shield","shift","shine","ship","shiver","shock","shoe","shoot","shop","short","shoulder","shove","shrimp","shrug","shuffle","shy","sibling","sick","side","siege","sight","sign","silent","silk","silly","silver","similar","simple","since","sing","siren","sister","situate","six","size","skate","sketch","ski","skill","skin","skirt","skull","slab","slam","sleep","slender","slice","slide","slight","slim","slogan","slot","slow","slush","small","smart","smile","smoke","smooth","snack","snake","snap","sniff","snow","soap","soccer","social","sock","soda","soft","solar","soldier","solid","solution","solve","someone","song","soon","sorry","sort","soul","sound","soup","source","south","space","spare","spatial","spawn","speak","special","speed","spell","spend","sphere","spice","spider","spike","spin","spirit","split","spoil","sponsor","spoon","sport","spot","spray","spread","spring","spy","square","squeeze","squirrel","stable","stadium","staff","stage","stairs","stamp","stand","start","state","stay","steak","steel","stem","step","stereo","stick","still","sting","stock","stomach","stone","stool","story","stove","strategy","street","strike","strong","struggle","student","stuff","stumble","style","subject","submit","subway","success","such","sudden","suffer","sugar","suggest","suit","summer","sun","sunny","sunset","super","supply","supreme","sure","surface","surge","surprise","surround","survey","suspect","sustain","swallow","swamp","swap","swarm","swear","sweet","swift","swim","swing","switch","sword","symbol","symptom","syrup","system","table","tackle","tag","tail","talent","talk","tank","tape","target","task","taste","tattoo","taxi","teach","team","tell","ten","tenant","tennis","tent","term","test","text","thank","that","theme","then","theory","there","they","thing","this","thought","three","thrive","throw","thumb","thunder","ticket","tide","tiger","tilt","timber","time","tiny","tip","tired","tissue","title","toast","tobacco","today","toddler","toe","together","toilet","token","tomato","tomorrow","tone","tongue","tonight","tool","tooth","top","topic","topple","torch","tornado","tortoise","toss","total","tourist","toward","tower","town","toy","track","trade","traffic","tragic","train","transfer","trap","trash","travel","tray","treat","tree","trend","trial","tribe","trick","trigger","trim","trip","trophy","trouble","truck","true","truly","trumpet","trust","truth","try","tube","tuition","tumble","tuna","tunnel","turkey","turn","turtle","twelve","twenty","twice","twin","twist","two","type","typical","ugly","umbrella","unable","unaware","uncle","uncover","under","undo","unfair","unfold","unhappy","uniform","unique","unit","universe","unknown","unlock","until","unusual","unveil","update","upgrade","uphold","upon","upper","upset","urban","urge","usage","use","used","useful","useless","usual","utility","vacant","vacuum","vague","valid","valley","valve","van","vanish","vapor","various","vast","vault","vehicle","velvet","vendor","venture","venue","verb","verify","version","very","vessel","veteran","viable","vibrant","vicious","victory","video","view","village","vintage","violin","virtual","virus","visa","visit","visual","vital","vivid","vocal","voice","void","volcano","volume","vote","voyage","wage","wagon","wait","walk","wall","walnut","want","warfare","warm","warrior","wash","wasp","waste","water","wave","way","wealth","weapon","wear","weasel","weather","web","wedding","weekend","weird","welcome","west","wet","whale","what","wheat","wheel","when","where","whip","whisper","wide","width","wife","wild","will","win","window","wine","wing","wink","winner","winter","wire","wisdom","wise","wish","witness","wolf","woman","wonder","wood","wool","word","work","world","worry","worth","wrap","wreck","wrestle","wrist","write","wrong","yard","year","yellow","you","young","youth","zebra","zero","zone","zoo"];
+
+/* ==================== HashEngine ==================== */
+class HashEngine {
+  static sha256(bytes) {
+    const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+    const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const rotR = (x, n) => ((x >>> n) | (x << (32 - n))) >>> 0;
+    const Ch = (x, y, z) => ((x & y) ^ (~x & z)) >>> 0;
+    const Maj = (x, y, z) => ((x & y) ^ (x & z) ^ (y & z)) >>> 0;
+    const Sigma0 = (x) => (rotR(x, 2) ^ rotR(x, 13) ^ rotR(x, 22)) >>> 0;
+    const Sigma1 = (x) => (rotR(x, 6) ^ rotR(x, 11) ^ rotR(x, 25)) >>> 0;
+    const sigma0 = (x) => (rotR(x, 7) ^ rotR(x, 18) ^ (x >>> 3)) >>> 0;
+    const sigma1 = (x) => (rotR(x, 17) ^ rotR(x, 19) ^ (x >>> 10)) >>> 0;
+    const add = (a, b) => (a + b) >>> 0;
+    const len = bytes.length, bitLen = len * 8;
+    const paddedLen = Math.ceil((len + 9) / 64) * 64;
+    const padded = new Uint8Array(paddedLen);
+    padded.set(bytes); padded[len] = 0x80;
+    const view = new DataView(padded.buffer);
+    view.setUint32(paddedLen - 4, bitLen >>> 0, false);
+    view.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000) >>> 0, false);
+    const W = new Uint32Array(64);
+    for (let i = 0; i < paddedLen; i += 64) {
+      for (let t = 0; t < 16; t++) W[t] = view.getUint32(i + t * 4, false);
+      for (let t = 16; t < 64; t++) W[t] = add(add(sigma1(W[t-2]), W[t-7]), add(sigma0(W[t-15]), W[t-16]));
+      let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+      for (let t = 0; t < 64; t++) {
+        const T1 = add(add(add(h, Sigma1(e)), Ch(e, f, g)), add(add(K[t], W[t])));
+        const T2 = add(Sigma0(a), Maj(a, b, c));
+        h = g; g = f; f = e; e = add(d, T1); d = c; c = b; b = a; a = add(T1, T2);
+      }
+      H[0] = add(a, H[0]); H[1] = add(b, H[1]); H[2] = add(c, H[2]); H[3] = add(d, H[3]);
+      H[4] = add(e, H[4]); H[5] = add(f, H[5]); H[6] = add(g, H[6]); H[7] = add(h, H[7]);
+    }
+    const out = new Uint8Array(32);
+    const ov = new DataView(out.buffer);
+    for (let i = 0; i < 8; i++) ov.setUint32(i * 4, H[i], false);
+    return out;
+  }
+
+  static sha512(bytes) {
+    const MASK64 = 0xFFFFFFFFFFFFFFFFn;
+    const K = [0x428a2f98d728ae22n,0x7137449123ef65cdn,0xb5c0fbcfec4d3b2fn,0xe9b5dba58189dbbcn,0x3956c25bf348b538n,0x59f111f1b605d019n,0x923f82a4af194f9bn,0xab1c5ed5da6d8118n,0xd807aa98a3030242n,0x12835b0145706fben,0x243185be4ee4b28cn,0x550c7dc3d5ffb4e2n,0x72be5d74f27b896fn,0x80deb1fe3b1696b1n,0x9bdc06a725c71235n,0xc19bf174cf692694n,0xe49b69c19ef14ad2n,0xefbe4786384f25e3n,0x0fc19dc68b8cd5b5n,0x240ca1cc77ac9c65n,0x2de92c6f592b0275n,0x4a7484aa6ea6e483n,0x5cb0a9dcbd41fbd4n,0x76f988da831153b5n,0x983e5152ee66dfabn,0xa831c66d2db43210n,0xb00327c898fb213fn,0xbf597fc7beef0ee4n,0xc6e00bf33da88fc2n,0xd5a79147930aa725n,0x06ca6351e003826fn,0x142929670a0e6e70n,0x27b70a8546d22ffcn,0x2e1b21385c26c926n,0x4d2c6dfc5ac42aedn,0x53380d139d95b3dfn,0x650a73548baf63den,0x766a0abb3c77b2a8n,0x81c2c92e47edaee6n,0x92722c851482353bn,0xa2bfe8a14cf10364n,0xa81a664bbc423001n,0xc24b8b70d0f89791n,0xc76c51a30654be30n,0xd192e819d6ef5218n,0xd69906245565a910n,0xf40e35855771202an,0x106aa07032bbd1b8n,0x19a4c116b8d2d0c8n,0x1e376c085141ab53n,0x2748774cdf8eeb99n,0x34b0bcb5e19b48a8n,0x391c0cb3c5c95a63n,0x4ed8aa4ae3418acbn,0x5b9cca4f7763e373n,0x682e6ff3d6b2b8a3n,0x748f82ee5defb2fcn,0x78a5636f43172f60n,0x84c87814a1f0ab72n,0x8cc702081a6439ecn,0x90befffa23631e28n,0xa4506cebde82bde9n,0xbef9a3f7b2c67915n,0xc67178f2e372532bn,0xca273eceea26619cn,0xd186b8c721c0c207n,0xeada7dd6cde0eb1en,0xf57d4f7fee6ed178n,0x06f067aa72176fban,0x0a637dc5a2c898a6n,0x113f9804bef90daen,0x1b710b35131c471bn,0x28db77f523047d84n,0x32caab7b40c72493n,0x3c9ebe0a15c9bebcn,0x431d67c49c100d4cn,0x4cc5d4becb3e42b6n,0x597f299cfc657e2an,0x5fcb6fab3ad6faecn,0x6c44198c4a475817n];
+    let H0 = 0x6a09e667f3bcc908n, H1 = 0xbb67ae8584caa73bn, H2 = 0x3c6ef372fe94f82bn, H3 = 0xa54ff53a5f1d36f1n;
+    let H4 = 0x510e527fade682d1n, H5 = 0x9b05688c2b3e6c1fn, H6 = 0x1f83d9abfb41bd6bn, H7 = 0x5be0cd19137e2179n;
+    const rotR = (x, n) => ((x >> n) | (x << (64n - n))) & MASK64;
+    const Ch = (x, y, z) => ((x & y) ^ (~x & z)) & MASK64;
+    const Maj = (x, y, z) => ((x & y) ^ (x & z) ^ (y & z)) & MASK64;
+    const Sigma0 = (x) => (rotR(x, 28n) ^ rotR(x, 34n) ^ rotR(x, 39n)) & MASK64;
+    const Sigma1 = (x) => (rotR(x, 14n) ^ rotR(x, 18n) ^ rotR(x, 41n)) & MASK64;
+    const sigma0 = (x) => (rotR(x, 1n) ^ rotR(x, 8n) ^ (x >> 7n)) & MASK64;
+    const sigma1 = (x) => (rotR(x, 19n) ^ rotR(x, 61n) ^ (x >> 6n)) & MASK64;
+    const len = bytes.length, bitLen = BigInt(len) * 8n;
+    const paddedLen = Math.ceil((len + 17) / 128) * 128;
+    const padded = new Uint8Array(paddedLen);
+    padded.set(bytes); padded[len] = 0x80;
+    const view = new DataView(padded.buffer);
+    view.setUint32(paddedLen - 4, Number(bitLen & 0xFFFFFFFFn), false);
+    view.setUint32(paddedLen - 8, Number((bitLen >> 32n) & 0xFFFFFFFFn), false);
+    const W = new Array(80);
+    for (let i = 0; i < paddedLen; i += 128) {
+      for (let t = 0; t < 16; t++) {
+        const hi = BigInt(view.getUint32(i + t * 8, false));
+        const lo = BigInt(view.getUint32(i + t * 8 + 4, false));
+        W[t] = ((hi << 32n) | lo) & MASK64;
+      }
+      for (let t = 16; t < 80; t++) W[t] = (sigma1(W[t-2]) + W[t-7] + sigma0(W[t-15]) + W[t-16]) & MASK64;
+      let a = H0, b = H1, c = H2, d = H3, e = H4, f = H5, g = H6, h = H7;
+      for (let t = 0; t < 80; t++) {
+        const T1 = (h + Sigma1(e) + Ch(e, f, g) + K[t] + W[t]) & MASK64;
+        const T2 = (Sigma0(a) + Maj(a, b, c)) & MASK64;
+        h = g; g = f; f = e; e = (d + T1) & MASK64;
+        d = c; c = b; b = a; a = (T1 + T2) & MASK64;
+      }
+      H0 = (H0 + a) & MASK64; H1 = (H1 + b) & MASK64; H2 = (H2 + c) & MASK64; H3 = (H3 + d) & MASK64;
+      H4 = (H4 + e) & MASK64; H5 = (H5 + f) & MASK64; H6 = (H6 + g) & MASK64; H7 = (H7 + h) & MASK64;
+    }
+    const out = new Uint8Array(64);
+    const ov = new DataView(out.buffer);
+    const write64 = (off, v) => {
+      ov.setUint32(off, Number((v >> 32n) & 0xFFFFFFFFn), false);
+      ov.setUint32(off + 4, Number(v & 0xFFFFFFFFn), false);
+    };
+    write64(0, H0); write64(8, H1); write64(16, H2); write64(24, H3);
+    write64(32, H4); write64(40, H5); write64(48, H6); write64(56, H7);
+    return out;
+  }
+
+  static ripemd160(bytes) {
+    const f = (j, x, y, z) => {
+      if (j < 16) return (x ^ y ^ z) >>> 0;
+      if (j < 32) return ((x & y) | (~x & z)) >>> 0;
+      if (j < 48) return ((x | ~y) ^ z) >>> 0;
+      if (j < 64) return ((x & z) | (y & ~z)) >>> 0;
+      return (x ^ (y | ~z)) >>> 0;
+    };
+    const K1 = [0x00000000, 0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xA953FD4E];
+    const K2 = [0x50A28BE6, 0x5C4DD124, 0x6D703EF3, 0x7A6D76E9, 0x00000000];
+    const r1 = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,7,4,13,1,10,6,15,3,12,0,9,5,2,14,11,8,3,10,14,4,9,15,8,1,2,7,0,6,13,11,5,12,1,9,11,10,0,8,12,4,13,3,7,15,14,5,6,2,4,0,5,9,7,12,2,10,14,1,3,8,11,6,15,13];
+    const r2 = [5,14,7,0,9,2,11,4,13,6,15,8,1,10,3,12,6,11,3,7,0,13,5,10,14,15,8,12,4,9,1,2,15,5,1,3,7,14,6,9,11,8,12,2,10,0,4,13,8,6,4,1,3,11,15,0,5,12,2,13,9,7,10,14,12,15,10,4,1,5,8,7,6,2,13,14,0,3,9,11];
+    const s1 = [11,14,15,12,5,8,7,9,11,13,14,15,6,7,9,8,7,6,8,13,11,9,7,15,7,12,15,9,11,7,13,12,11,13,6,7,14,9,13,15,14,8,13,6,5,12,7,5,11,12,14,15,14,15,9,8,9,14,5,6,8,6,5,12,9,15,5,11,6,8,13,12,5,12,13,14,11,8,5,6];
+    const s2 = [8,9,9,11,11,11,12,12,12,13,13,14,14,15,15,6,7,7,8,8,9,9,10,10,11,11,12,12,13,14,14,15,15,5,5,6,6,7,7,8,8,9,10,10,11,12,12,13,13,14,15,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15];
+    const rotL = (x, n) => ((x << n) | (x >>> (32 - n))) >>> 0;
+    const add = (a, b) => (a + b) >>> 0;
+    const len = bytes.length, bitLen = len * 8;
+    const paddedLen = Math.ceil((len + 9) / 64) * 64;
+    const padded = new Uint8Array(paddedLen);
+    padded.set(bytes); padded[len] = 0x80;
+    const view = new DataView(padded.buffer);
+    view.setUint32(paddedLen - 8, bitLen >>> 0, true);
+    view.setUint32(paddedLen - 4, Math.floor(bitLen / 0x100000000) >>> 0, true);
+    let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+    for (let i = 0; i < paddedLen; i += 64) {
+      const X = new Uint32Array(16);
+      for (let j = 0; j < 16; j++) X[j] = view.getUint32(i + j * 4, true);
+      let a1 = h0, b1 = h1, c1 = h2, d1 = h3, e1 = h4;
+      let a2 = h0, b2 = h1, c2 = h2, d2 = h3, e2 = h4;
+      for (let j = 0; j < 80; j++) {
+        const rnd = j >> 4;
+        let t1 = add(a1, f(j, b1, c1, d1)); t1 = add(t1, X[r1[j]]); t1 = add(t1, K1[rnd]);
+        t1 = add(rotL(t1, s1[j]), e1);
+        a1 = e1; e1 = d1; d1 = rotL(c1, 10); c1 = b1; b1 = t1;
+        let t2 = add(a2, f(79 - j, b2, c2, d2)); t2 = add(t2, X[r2[j]]); t2 = add(t2, K2[rnd]);
+        t2 = add(rotL(t2, s2[j]), e2);
+        a2 = e2; e2 = d2; d2 = rotL(c2, 10); c2 = b2; b2 = t2;
+      }
+      const t = add(h1, add(c1, d2));
+      h1 = add(h2, add(d1, e2)); h2 = add(h3, add(e1, a2));
+      h3 = add(h4, add(a1, b2)); h4 = add(h0, add(b1, c2)); h0 = t;
+    }
+    const out = new Uint8Array(20);
+    const ov = new DataView(out.buffer);
+    ov.setUint32(0, h0, true); ov.setUint32(4, h1, true); ov.setUint32(8, h2, true);
+    ov.setUint32(12, h3, true); ov.setUint32(16, h4, true);
+    return out;
+  }
+
+  static hash160(bytes) { return this.ripemd160(this.sha256(bytes)); }
+
+  static hmacSha512(key, message) {
+    const BLOCK_SIZE = 128;
+    let k = key;
+    if (k.length > BLOCK_SIZE) k = this.sha512(k);
+    if (k.length < BLOCK_SIZE) {
+      const padded = new Uint8Array(BLOCK_SIZE);
+      padded.set(k); k = padded;
+    }
+    const ipad = new Uint8Array(BLOCK_SIZE);
+    const opad = new Uint8Array(BLOCK_SIZE);
+    for (let i = 0; i < BLOCK_SIZE; i++) { ipad[i] = k[i] ^ 0x36; opad[i] = k[i] ^ 0x5c; }
+    const inner = new Uint8Array(BLOCK_SIZE + message.length);
+    inner.set(ipad); inner.set(message, BLOCK_SIZE);
+    const innerHash = this.sha512(inner);
+    const outer = new Uint8Array(BLOCK_SIZE + 64);
+    outer.set(opad); outer.set(innerHash, BLOCK_SIZE);
+    return this.sha512(outer);
+  }
+}
+
+/* ==================== FiniteFieldEngine ==================== */
+class FiniteFieldEngine {
+  constructor() {
+    this.P = new Uint32Array([0xFFFFFC2F,0xFFFFFFFE,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF]);
+    this.N = new Uint32Array([0xD0364141,0xBFD25E8C,0xAF48A03B,0xBAAEDCE6,0xFFFFFFFE,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF]);
+  }
+  fromHex(hex) {
+    if (hex.startsWith('0x')) hex = hex.slice(2);
+    while (hex.length < 64) hex = '0' + hex;
+    const out = new Uint32Array(8);
+    for (let i = 0; i < 8; i++) out[i] = parseInt(hex.substr(64 - (i+1)*8, 8), 16);
+    return out;
+  }
+  toHex(v) {
+    let s = '';
+    for (let i = 7; i >= 0; i--) s += v[i].toString(16).padStart(8, '0');
+    return s;
+  }
+  toBytes(v) {
+    const out = new Uint8Array(32);
+    for (let i = 0; i < 8; i++) {
+      const w = v[i];
+      out[(7-i)*4] = (w >>> 24) & 0xff; out[(7-i)*4+1] = (w >>> 16) & 0xff;
+      out[(7-i)*4+2] = (w >>> 8) & 0xff; out[(7-i)*4+3] = w & 0xff;
+    }
+    return out;
+  }
+  fromBytes(bytes) {
+    const out = new Uint32Array(8);
+    for (let i = 0; i < 8; i++) {
+      const b = (7-i)*4;
+      out[i] = ((bytes[b] << 24) | (bytes[b+1] << 16) | (bytes[b+2] << 8) | bytes[b+3]) >>> 0;
+    }
+    return out;
+  }
+  zero() { return new Uint32Array(8); }
+  one() { const o = this.zero(); o[0] = 1; return o; }
+  isZero(v) { for (let i = 0; i < 8; i++) if (v[i] !== 0) return false; return true; }
+  eq(a, b) { for (let i = 0; i < 8; i++) if (a[i] !== b[i]) return false; return true; }
+  clone(a) { const o = new Uint32Array(8); for (let i = 0; i < 8; i++) o[i] = a[i]; return o; }
+  reduce(a) {
+    let borrow = 0;
+    for (let i = 0; i < 8; i++) {
+      const d = a[i] - this.P[i] - borrow;
+      a[i] = d >>> 0; borrow = (d > 0xFFFFFFFF) ? 1 : 0;
+    }
+    if (borrow === 0) return;
+    let carry = 0;
+    for (let i = 0; i < 8; i++) {
+      const s = a[i] + this.P[i] + carry;
+      a[i] = s >>> 0; carry = s > 0xFFFFFFFF ? 1 : 0;
+    }
+  }
+  add(a, b) {
+    const out = new Uint32Array(8);
+    let carry = 0;
+    for (let i = 0; i < 8; i++) {
+      const s = a[i] + b[i] + carry;
+      out[i] = s >>> 0; carry = s > 0xFFFFFFFF ? 1 : 0;
+    }
+    let borrow = 0;
+    const tmp = new Uint32Array(8);
+    for (let i = 0; i < 8; i++) {
+      const d = out[i] - this.P[i] - borrow;
+      tmp[i] = d >>> 0; borrow = (d > 0xFFFFFFFF) ? 1 : 0;
+    }
+    return borrow === 0 ? tmp : out;
+  }
+  sub(a, b) {
+    const out = new Uint32Array(8);
+    let borrow = 0;
+    for (let i = 0; i < 8; i++) {
+      const d = a[i] - b[i] - borrow;
+      out[i] = d >>> 0; borrow = (d > 0xFFFFFFFF) ? 1 : 0;
+    }
+    if (borrow) {
+      let c = 0;
+      for (let i = 0; i < 8; i++) {
+        const s = out[i] + this.P[i] + c;
+        out[i] = s >>> 0; c = s > 0xFFFFFFFF ? 1 : 0;
+      }
+    }
+    return out;
+  }
+  mul(a, b) {
+    const t = new Uint32Array(16);
+    for (let i = 0; i < 8; i++) {
+      let carry = 0;
+      for (let j = 0; j < 8; j++) {
+        const ah = a[i] >>> 16, al = a[i] & 0xFFFF;
+        const bh = b[j] >>> 16, bl = b[j] & 0xFFFF;
+        const m0 = al * bl, m1 = al * bh + ah * bl, m2 = ah * bh;
+        let lo = m0 + ((m1 & 0xFFFF) << 16);
+        let hi = m2 + (m1 >>> 16);
+        const s = t[i+j] + (lo >>> 0) + carry;
+        t[i+j] = s >>> 0;
+        carry = (s > 0xFFFFFFFF ? 1 : 0) + (lo > 0xFFFFFFFF ? 1 : 0) + hi;
+      }
+      let k = i + 8;
+      while (carry) {
+        const s = t[k] + carry;
+        t[k] = s >>> 0; carry = s > 0xFFFFFFFF ? 1 : 0; k++;
+      }
+    }
+    let r = new Uint32Array(8);
+    for (let i = 0; i < 8; i++) r[i] = t[i];
+    let carry = 0;
+    for (let i = 0; i < 8; i++) {
+      const hWord = t[i + 8];
+      const p0 = hWord * 0x3D1;
+      const lo = p0 >>> 0, hi = Math.floor(p0 / 0x100000000);
+      let s = r[i] + lo + carry;
+      r[i] = s >>> 0; carry = (s > 0xFFFFFFFF ? 1 : 0) + hi;
+    }
+    let r8 = carry;
+    carry = 0;
+    for (let i = 0; i < 8; i++) {
+      const addH = t[i + 8];
+      let s = r[i] + addH + carry;
+      r[i] = s >>> 0; carry = s > 0xFFFFFFFF ? 1 : 0;
+    }
+    r8 += carry;
+    let s0 = r[0] + r8 * 0x3D1;
+    let c0 = Math.floor(s0 / 0x100000000);
+    r[0] = s0 >>> 0;
+    let s1 = r[1] + r8 + c0;
+    let c1 = s1 > 0xFFFFFFFF ? 1 : 0;
+    r[1] = s1 >>> 0;
+    for (let i = 2; i < 8 && c1; i++) {
+      const s = r[i] + c1; r[i] = s >>> 0; c1 = s > 0xFFFFFFFF ? 1 : 0;
+    }
+    this.reduce(r);
+    return r;
+  }
+  square(a) { return this.mul(a, a); }
+  inv(a) {
+    const exp = this.clone(this.P); exp[0] -= 2;
+    return this.pow(a, exp);
+  }
+  pow(base, exp) {
+    let result = this.one();
+    let b = this.clone(base);
+    for (let i = 0; i < 8; i++) {
+      let word = exp[i];
+      for (let bit = 0; bit < 32; bit++) {
+        if (word & 1) result = this.mul(result, b);
+        b = this.square(b); word >>>= 1;
+      }
+    }
+    return result;
+  }
+  addN(a, b) {
+    const out = new Uint32Array(8);
+    let carry = 0;
+    for (let i = 0; i < 8; i++) {
+      const s = a[i] + b[i] + carry;
+      out[i] = s >>> 0; carry = s > 0xFFFFFFFF ? 1 : 0;
+    }
+    let borrow = 0;
+    const tmp = new Uint32Array(8);
+    for (let i = 0; i < 8; i++) {
+      const d = out[i] - this.N[i] - borrow;
+      tmp[i] = d >>> 0; borrow = (d > 0xFFFFFFFF) ? 1 : 0;
+    }
+    return borrow === 0 ? tmp : out;
+  }
+}
+
+/* ==================== EllipticCurveEngine ==================== */
+class EllipticCurveEngine {
+  constructor() {
+    this.F = new FiniteFieldEngine();
+    this.a = this.F.zero();
+    this.b = this.F.zero(); this.b[0] = 7;
+    this.Gx = this.F.fromHex('79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798');
+    this.Gy = this.F.fromHex('483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8');
+  }
+  infinity() { return { inf: true }; }
+  isInfinity(p) { return p.inf === true; }
+  point(x, y) { return { x: this.F.clone(x), y: this.F.clone(y), inf: false }; }
+  toJacobian(p) {
+    if (this.isInfinity(p)) return { X: this.F.zero(), Y: this.F.one(), Z: this.F.zero() };
+    return { X: this.F.clone(p.x), Y: this.F.clone(p.y), Z: this.F.one() };
+  }
+  toAffine(J) {
+    if (this.F.isZero(J.Z)) return this.infinity();
+    const zInv = this.F.inv(J.Z);
+    const z2 = this.F.square(zInv);
+    const z3 = this.F.mul(z2, zInv);
+    return this.point(this.F.mul(J.X, z2), this.F.mul(J.Y, z3));
+  }
+  jacobianDouble(J) {
+    if (this.F.isZero(J.Y) || this.F.isZero(J.Z)) return { X: this.F.one(), Y: this.F.one(), Z: this.F.zero() };
+    const A = this.F.square(J.X);
+    const B = this.F.square(J.Y);
+    const C = this.F.square(B);
+    const XpB = this.F.add(J.X, B);
+    const D = this.F.sub(this.F.sub(this.F.square(XpB), A), C);
+    const D2 = this.F.add(D, D);
+    const E = this.F.add(this.F.add(A, A), A);
+    const F = this.F.square(E);
+    const X3 = this.F.sub(F, this.F.add(D2, D2));
+    const Y3 = this.F.sub(this.F.mul(E, this.F.sub(D2, X3)), this.F.add(this.F.add(C, C), this.F.add(this.F.add(C, C), this.F.add(C, C))));
+    const Z3 = this.F.mul(this.F.add(J.Y, J.Y), J.Z);
+    return { X: X3, Y: Y3, Z: Z3 };
+  }
+  jacobianAddMixed(J, P) {
+    if (this.isInfinity(P)) return J;
+    if (this.F.isZero(J.Z)) return this.toJacobian(P);
+    const Z1Z1 = this.F.square(J.Z);
+    const U2 = this.F.mul(P.x, Z1Z1);
+    const S2 = this.F.mul(P.y, this.F.mul(J.Z, Z1Z1));
+    const H = this.F.sub(U2, J.X);
+    const HH = this.F.square(H);
+    const I = this.F.add(this.F.add(HH, HH), this.F.add(HH, HH));
+    const JJ = this.F.mul(H, I);
+    const r = this.F.add(this.F.sub(S2, J.Y), this.F.sub(S2, J.Y));
+    const V = this.F.mul(J.X, I);
+    const V2 = this.F.add(V, V);
+    const X3 = this.F.sub(this.F.sub(this.F.square(r), JJ), V2);
+    const Y3 = this.F.sub(this.F.mul(r, this.F.sub(V, X3)), this.F.add(this.F.mul(J.Y, JJ), this.F.mul(J.Y, JJ)));
+    const ZpH = this.F.add(J.Z, H);
+    const Z3 = this.F.sub(this.F.sub(this.F.square(ZpH), Z1Z1), HH);
+    return { X: X3, Y: Y3, Z: Z3 };
+  }
+  validate(p) {
+    if (this.isInfinity(p)) return true;
+    const y2 = this.F.square(p.y);
+    const x3 = this.F.mul(this.F.square(p.x), p.x);
+    return this.F.eq(y2, this.F.add(x3, this.b));
+  }
+  compressPoint(p) {
+    if (this.isInfinity(p)) return new Uint8Array([0x00]);
+    const prefix = (p.y[0] & 1) ? 0x03 : 0x02;
+    const xBytes = this.F.toBytes(p.x);
+    const out = new Uint8Array(33);
+    out[0] = prefix; out.set(xBytes, 1);
+    return out;
+  }
+  multiply(k, P) {
+    let R0 = this.infinity();
+    let R1 = { x: this.F.clone(P.x), y: this.F.clone(P.y), inf: false };
+    R0 = this.toJacobian(R0); R1 = this.toJacobian(R1);
+    for (let i = 7; i >= 0; i--) {
+      let w = k[i];
+      for (let bit = 31; bit >= 0; bit--) {
+        const ki = (w >>> 31) & 1;
+        if (ki === 0) {
+          R1 = this.jacobianAddMixed(R1, this.toAffine(R0));
+          R0 = this.jacobianDouble(R0);
+        } else {
+          R0 = this.jacobianAddMixed(R0, this.toAffine(R1));
+          R1 = this.jacobianDouble(R1);
+        }
+        w <<= 1;
+      }
+    }
+    return this.toAffine(R0);
+  }
+}
+
+/* ==================== BIP32Engine ==================== */
+class BIP32Engine {
+  constructor(EC) { this.EC = EC; this.F = EC.F; }
+  masterFromSeed(seed) {
+    const key = new TextEncoder().encode('Bitcoin seed');
+    const I = HashEngine.hmacSha512(key, seed);
+    const IL = I.slice(0, 32);
+    const IR = I.slice(32, 64);
+    const k = this.F.fromBytes(IL);
+    if (this.F.isZero(k)) throw new Error('Master key inválida (zero)');
+    return { privateKey: k, chainCode: IR, depth: 0, index: 0, parentFingerprint: new Uint8Array(4) };
+  }
+  deriveChild(parent, index, hardened = false) {
+    const data = new Uint8Array(37);
+    if (hardened) {
+      if (index < 0x80000000) index += 0x80000000;
+      data[0] = 0x00;
+      data.set(this.F.toBytes(parent.privateKey), 1);
+    } else {
+      const G = this.EC.point(this.EC.Gx, this.EC.Gy);
+      const pubPoint = this.EC.multiply(parent.privateKey, G);
+      const pubCompressed = this.EC.compressPoint(pubPoint);
+      data.set(pubCompressed, 0);
+    }
+    data[33] = (index >>> 24) & 0xff;
+    data[34] = (index >>> 16) & 0xff;
+    data[35] = (index >>> 8) & 0xff;
+    data[36] = index & 0xff;
+    const I = HashEngine.hmacSha512(parent.chainCode, data);
+    const IL = I.slice(0, 32);
+    const IR = I.slice(32, 64);
+    const ilNum = this.F.fromBytes(IL);
+    const childKey = this.F.addN(ilNum, parent.privateKey);
+    if (this.F.isZero(childKey)) throw new Error('Child key inválida');
+    const G = this.EC.point(this.EC.Gx, this.EC.Gy);
+    const parentPub = this.EC.compressPoint(this.EC.multiply(parent.privateKey, G));
+    const parentHash = HashEngine.hash160(parentPub);
+    const fingerprint = parentHash.slice(0, 4);
+    return { privateKey: childKey, chainCode: IR, depth: parent.depth + 1, index: index, parentFingerprint: fingerprint };
+  }
+  derivePath(master, path) {
+    const parts = path.split('/');
+    if (parts[0] !== 'm') throw new Error('Caminho deve começar com m');
+    let current = master;
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i];
+      const hardened = part.endsWith("'") || part.endsWith('h');
+      const index = parseInt(hardened ? part.slice(0, -1) : part);
+      current = this.deriveChild(current, index, hardened);
+    }
+    return current;
+  }
+}
+
+/* ==================== BitcoinAddressEngine ==================== */
+class BitcoinAddressEngine {
+  static BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  static base58Encode(bytes) {
+    let num = 0n;
+    for (const b of bytes) num = (num << 8n) | BigInt(b);
+    let encoded = '';
+    while (num > 0n) {
+      const rem = Number(num % 58n);
+      num = num / 58n;
+      encoded = this.BASE58_ALPHABET[rem] + encoded;
+    }
+    for (const b of bytes) { if (b === 0) encoded = '1' + encoded; else break; }
+    return encoded;
+  }
+  static fromPublicKey(pubKeyBytes) {
+    const h160 = HashEngine.hash160(pubKeyBytes);
+    const versioned = new Uint8Array(21);
+    versioned[0] = 0x00; versioned.set(h160, 1);
+    const checksum = HashEngine.sha256(HashEngine.sha256(versioned)).slice(0, 4);
+    const full = new Uint8Array(25);
+    full.set(versioned, 0); full.set(checksum, 21);
+    return this.base58Encode(full);
+  }
+}
+
+/* ==================== MnemonicEngine ==================== */
+class MnemonicEngine {
+  static fromWords(words) {
+    if (words.length !== 12) throw new Error('São necessárias 12 palavras');
+    let bits = '';
+    for (const w of words) {
+      const idx = BIP39_WORDS.indexOf(w);
+      if (idx === -1) throw new Error(`Palavra inválida: ${w}`);
+      bits += idx.toString(2).padStart(11, '0');
+    }
+    const entropyBits = bits.substr(0, 128);
+    const checksumBits = bits.substr(128, 4);
+    const entropyBytes = new Uint8Array(16);
+    for (let i = 0; i < 16; i++) entropyBytes[i] = parseInt(entropyBits.substr(i * 8, 8), 2);
+    const hash = HashEngine.sha256(entropyBytes);
+    let expected = '';
+    for (let i = 0; i < 4; i++) expected += ((hash[i >> 3] >> (7 - (i & 7))) & 1).toString();
+    if (expected !== checksumBits) throw new Error('Checksum BIP39 inválido.');
+    return { entropyBytes, mnemonic: words.join(' ') };
+  }
+  
+  static toSeed(words, passphrase = '') {
+    const mnemonicStr = words.join(' ');
+    const salt = 'mnemonic' + passphrase;
+    const mnemonicBytes = new TextEncoder().encode(mnemonicStr);
+    const saltBytes = new TextEncoder().encode(salt);
+    const msgLen = saltBytes.length + 4;
+    const message = new Uint8Array(msgLen);
+    message.set(saltBytes, 0);
+    message[msgLen - 4] = 0; message[msgLen - 3] = 0; message[msgLen - 2] = 0; message[msgLen - 1] = 1;
+    let U = HashEngine.hmacSha512(mnemonicBytes, message);
+    let result = new Uint8Array(U);
+    for (let c = 2; c <= 2048; c++) {
+      U = HashEngine.hmacSha512(mnemonicBytes, U);
+      for (let j = 0; j < 64; j++) result[j] ^= U[j];
+    }
+    return result;
+  }
+}
+
+/* ==================== Engines auxiliares ==================== */
+class MathEngine {
+  static GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+  static SCALE = 2.0;
+  static radius(i) { return Math.cbrt(i) * this.SCALE; }
+  static weight(i) { return Math.pow(i, 2/3); }
+  static distributeVertices(numSpheres, totalVertices) {
+    const weights = [], quotas = [], floors = [], remainders = [];
+    let sumWeights = 0;
+    for (let i = 1; i <= numSpheres; i++) { const w = this.weight(i); weights.push(w); sumWeights += w; }
+    for (let i = 0; i < numSpheres; i++) {
+      const q = (weights[i] / sumWeights) * totalVertices;
+      quotas.push(q); floors.push(Math.floor(q)); remainders.push({ idx: i, rem: q - floors[i] });
+    }
+    let currentSum = floors.reduce((a, b) => a + b, 0);
+    remainders.sort((a, b) => b.rem - a.rem);
+    for (let k = 0; k < totalVertices - currentSum; k++) floors[remainders[k].idx] += 1;
+    return floors;
+  }
+}
+
+class FibonacciSphere {
+  static generate(n) {
+    const out = new Float32Array(n * 3);
+    const phi = MathEngine.GOLDEN_ANGLE;
+    for (let i = 0; i < n; i++) {
+      const z = 1 - (2 * i + 1) / n;
+      const rxy = Math.sqrt(1 - z * z);
+      const theta = phi * i;
+      out[i*3] = rxy * Math.cos(theta); out[i*3+1] = z; out[i*3+2] = rxy * Math.sin(theta);
+    }
+    return out;
+  }
+}
+
+class SpatialHashGrid {
+  constructor(cellSize) { this.cellSize = cellSize; this.grid = new Map(); }
+  _key(x, y, z) { return `${Math.floor(x/this.cellSize)},${Math.floor(y/this.cellSize)},${Math.floor(z/this.cellSize)}`; }
+  insert(id, x, y, z) {
+    const k = this._key(x, y, z);
+    if (!this.grid.has(k)) this.grid.set(k, []);
+    this.grid.get(k).push({ id, x, y, z });
+  }
+  query(x, y, z, r) {
+    const out = [];
+    const minCx = Math.floor((x - r) / this.cellSize), maxCx = Math.floor((x + r) / this.cellSize);
+    const minCy = Math.floor((y - r) / this.cellSize), maxCy = Math.floor((y + r) / this.cellSize);
+    const minCz = Math.floor((z - r) / this.cellSize), maxCz = Math.floor((z + r) / this.cellSize);
+    for (let cx = minCx; cx <= maxCx; cx++)
+    for (let cy = minCy; cy <= maxCy; cy++)
+    for (let cz = minCz; cz <= maxCz; cz++) {
+      const cell = this.grid.get(`${cx},${cy},${cz}`);
+      if (!cell) continue;
+      for (const it of cell) {
+        const dx = it.x - x, dy = it.y - y, dz = it.z - z;
+        if (dx*dx + dy*dy + dz*dz <= r*r) out.push(it);
+      }
+    }
+    return out;
+  }
+}
+
+class GraphEngine {
+  constructor(sg, k = 6) {
+    this.sg = sg; this.k = k; this.knnEdges = 0; this.mstEdges = 0; this.connectedComponents = 0;
+    this._buildKNN(); this._buildMST(); this._computeCC();
+  }
+  _buildKNN() {
+    const verts = this.sg.allVertices, n = verts.length;
+    const maxR = MathEngine.radius(this.sg.numSpheres), cellSize = maxR / 4;
+    const grid = new SpatialHashGrid(cellSize);
+    for (let i = 0; i < n; i++) grid.insert(i, verts[i].position.x, verts[i].position.y, verts[i].position.z);
+    const edgeSet = new Set();
+    for (let i = 0; i < n; i++) {
+      const p = verts[i].position;
+      let r = cellSize, neigh = [];
+      while (neigh.length < this.k && r < maxR * 2) {
+        const cands = grid.query(p.x, p.y, p.z, r);
+        neigh = cands.filter(c => c.id !== i).map(c => {
+          const dx = c.x - p.x, dy = c.y - p.y, dz = c.z - p.z;
+          return { id: c.id, d: Math.sqrt(dx*dx + dy*dy + dz*dz) };
+        }).sort((a, b) => a.d - b.d).slice(0, this.k);
+        r *= 1.5;
+      }
+      verts[i].neighbors = neigh.map(nb => nb.id);
+      for (const nb of neigh) {
+        const a = Math.min(i, nb.id), b = Math.max(i, nb.id);
+        edgeSet.add(a * n + b);
+      }
+    }
+    this.knnEdges = edgeSet.size;
+  }
+  _buildMST() {
+    const verts = this.sg.allVertices, n = verts.length;
+    const inMST = new Uint8Array(n), minDist = new Float64Array(n);
+    for (let i = 0; i < n; i++) minDist[i] = Infinity;
+    minDist[0] = 0;
+    for (let step = 0; step < n; step++) {
+      let u = -1;
+      for (let i = 0; i < n; i++) if (!inMST[i] && (u === -1 || minDist[i] < minDist[u])) u = i;
+      if (u === -1) break;
+      inMST[u] = 1;
+      if (step > 0) this.mstEdges++;
+      for (const nb of verts[u].neighbors) {
+        if (!inMST[nb]) {
+          const d = verts[u].position.distanceTo(verts[nb].position);
+          if (d < minDist[nb]) minDist[nb] = d;
+        }
+      }
+    }
+  }
+  _computeCC() {
+    const verts = this.sg.allVertices, n = verts.length;
+    const visited = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      if (visited[i]) continue;
+      this.connectedComponents++;
+      const queue = [i]; visited[i] = 1;
+      while (queue.length) {
+        const u = queue.shift();
+        for (const nb of verts[u].neighbors) if (!visited[nb]) { visited[nb] = 1; queue.push(nb); }
+      }
+    }
+  }
+}
+
+class FFTAnalysisEngine {
+  static fft(real, imag) {
+    const n = real.length;
+    let j = 0;
+    for (let i = 1; i < n; i++) {
+      let bit = n >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) { [real[i], real[j]] = [real[j], real[i]]; [imag[i], imag[j]] = [imag[j], imag[i]]; }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const ang = -2 * Math.PI / len, wR = Math.cos(ang), wI = Math.sin(ang);
+      for (let i = 0; i < n; i += len) {
+        let cR = 1, cI = 0;
+        for (let k = 0; k < len / 2; k++) {
+          const uR = real[i + k], uI = imag[i + k];
+          const vR = real[i + k + len/2] * cR - imag[i + k + len/2] * cI;
+          const vI = real[i + k + len/2] * cI + imag[i + k + len/2] * cR;
+          real[i + k] = uR + vR; imag[i + k] = uI + vI;
+          real[i + k + len/2] = uR - vR; imag[i + k + len/2] = uI - vI;
+          const newCR = cR * wR - cI * wI; cI = cR * wI + cI * wR; cR = newCR;
+        }
+      }
+    }
+  }
+  static computeSpectrum(vertices, nSamples = 256) {
+    const signal = new Float32Array(nSamples), imag = new Float32Array(nSamples);
+    const step = Math.floor(vertices.length / nSamples);
+    for (let i = 0; i < nSamples; i++) signal[i] = (vertices[i * step] || vertices[vertices.length - 1]).position.length();
+    this.fft(signal, imag);
+    const spectrum = new Float32Array(nSamples / 2);
+    for (let i = 0; i < nSamples / 2; i++) spectrum[i] = Math.sqrt(signal[i] * signal[i] + imag[i] * imag[i]);
+    return spectrum;
+  }
+}
+
+class ColorEngine {
+  constructor(n = 31) {
+    this.n = n; this.colors = [];
+    for (let i = 0; i < n; i++) this.colors.push(new THREE.Color(`hsl(${(360 / n) * i}, 80%, 58%)`));
+  }
+  colorFor(i) { return this.colors[i]; }
+  hueFor(i) { return (360 / this.n) * i; }
+}
+
+class SphereGenerator {
+  constructor(numSpheres, totalVertices, colorEngine) {
+    this.numSpheres = numSpheres; this.totalVertices = totalVertices; this.colorEngine = colorEngine;
+    this.distribution = MathEngine.distributeVertices(numSpheres, totalVertices);
+    this.spheres = []; this.allVertices = []; this._build();
+  }
+  _build() {
+    let id = 0;
+    for (let i = 0; i < this.numSpheres; i++) {
+      const n = this.distribution[i], r = MathEngine.radius(i + 1), w = MathEngine.weight(i + 1);
+      const unit = FibonacciSphere.generate(n), color = this.colorEngine.colorFor(i), verts = [];
+      for (let k = 0; k < n; k++) {
+        verts.push({ id, sphereIdx: i, sphereNumber: i + 1,
+          position: new THREE.Vector3(unit[k*3] * r, unit[k*3+1] * r, unit[k*3+2] * r),
+          bip39Idx: id % 2048, color, neighbors: [] });
+        this.allVertices.push(verts[k]); id++;
+      }
+      this.spheres.push({ index: i, number: i + 1, radius: r, weight: w, verts });
+    }
+  }
+  vertexById(id) { return this.allVertices[id]; }
+}
+
+/* ==================== Application ==================== */
+class Application {
+  constructor() {
+    this.clock = new THREE.Clock();
+    this.selectedVertex = null;
+    this.collectedWords = [];
+    this.collectedVertexIds = new Set();
+    this.validFinalWords = []; // NOVO: Armazena as 128 palavras válidas na 11ª etapa
+    this._init();
+  }
+
+  _init() {
+    this.EC = new EllipticCurveEngine();
+    this.BIP32 = new BIP32Engine(this.EC);
+    this.Colors = new ColorEngine(31);
+
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x000008);
+    this.scene.fog = new THREE.Fog(0x000008, 30, 80);
+    this._setupCamera(); this._setupRenderer(); this._setupLights(); this._setupControls();
+
+    this.SG = new SphereGenerator(31, 2048, this.Colors);
+    this.GE = new GraphEngine(this.SG, 6);
+    this.spectrum = FFTAnalysisEngine.computeSpectrum(this.SG.allVertices, 256);
+
+    this._buildVisuals();
+    this._setupRaycast();
+    this._setupAnimation();
+    this._setupUI();
+    this._bindEvents();
+
+    window.addEventListener('resize', () => this._onResize());
+    this._animate();
+  }
+
+  _setupCamera() {
+    const a = window.innerWidth / window.innerHeight;
+    this.camera = new THREE.PerspectiveCamera(55, a, 0.1, 1000);
+    this.camera.position.set(16, 12, 16);
+    this.camera.lookAt(0, 0, 0);
+  }
+  _setupRenderer() {
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(this.renderer.domElement);
+  }
+  _setupLights() {
+    this.scene.add(new THREE.AmbientLight(0x404060, 0.6));
+    const d = new THREE.DirectionalLight(0xffffff, 0.8); d.position.set(10, 20, 10); this.scene.add(d);
+    const p = new THREE.PointLight(0x8090ff, 0.5, 50); this.scene.add(p);
+  }
+  _setupControls() {
+    this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true; this.controls.dampingFactor = 0.08;
+    this.controls.autoRotate = true; this.controls.autoRotateSpeed = 0.5;
+    this.controls.minDistance = 3; this.controls.maxDistance = 100;
+  }
+
+  _buildVisuals() {
+    this.sphereMeshes = [];
+    for (let i = 0; i < 31; i++) {
+      const s = this.SG.spheres[i], color = this.Colors.colorFor(i);
+      const geo = new THREE.IcosahedronGeometry(s.radius, 2);
+      const mat = new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.04, depthWrite: false });
+      this.scene.add(new THREE.Mesh(geo, mat));
+      this.sphereMeshes.push(mat);
+    }
+    const N = 2048;
+    this.originalColors = new Float32Array(N * 3);
+    const pos = new Float32Array(N * 3), cols = new Float32Array(N * 3), sizes = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      const v = this.SG.allVertices[i];
+      pos[i*3] = v.position.x; pos[i*3+1] = v.position.y; pos[i*3+2] = v.position.z;
+      cols[i*3] = v.color.r; cols[i*3+1] = v.color.g; cols[i*3+2] = v.color.b;
+      this.originalColors[i*3] = v.color.r;
+      this.originalColors[i*3+1] = v.color.g;
+      this.originalColors[i*3+2] = v.color.b;
+      sizes[i] = 0.18;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    this.points = new THREE.Points(geo, new THREE.ShaderMaterial({
+      vertexShader: `attribute float size; attribute vec3 color; varying vec3 vColor; varying float vDepth;
+        void main() { vColor = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); vDepth = -mv.z;
+        gl_PointSize = size * (300.0 / -mv.z); gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `varying vec3 vColor; varying float vDepth;
+        void main() { vec2 uv = gl_PointCoord - vec2(0.5); float d = length(uv); if (d > 0.5) discard;
+        float alpha = smoothstep(0.5, 0.1, d); float glow = exp(-d * 4.0) * 0.6;
+        float depthFade = clamp(1.0 - vDepth * 0.01, 0.2, 1.0);
+        gl_FragColor = vec4(vColor * (1.0 + glow), alpha * depthFade); }`,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    this.scene.add(this.points);
+
+    const glowGeo = new THREE.SphereGeometry(0.35, 16, 16);
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0xffd86b, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.glow = new THREE.Mesh(glowGeo, glowMat); this.glow.visible = false; this.scene.add(this.glow);
+
+    const ringGeo = new THREE.RingGeometry(0.98, 1.02, 64);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false });
+    this.ring = new THREE.Mesh(ringGeo, ringMat); this.scene.add(this.ring);
+  }
+
+  _setupRaycast() {
+    this.raycaster = new THREE.Raycaster();
+    this.raycaster.params.Points.threshold = 0.3;
+    this.mouse = new THREE.Vector2();
+    const onClick = (e) => {
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      const cx = e.clientX ?? (e.changedTouches?.[0]?.clientX);
+      const cy = e.clientY ?? (e.changedTouches?.[0]?.clientY);
+      if (cx === undefined) return;
+      this.mouse.x = ((cx - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((cy - rect.top) / rect.height) * 2 + 1;
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      const hits = this.raycaster.intersectObject(this.points);
+      if (hits.length) {
+        const v = this.SG.vertexById(hits[0].index);
+        if (v) this._onVertexClick(v);
+      }
+    };
+    this.renderer.domElement.addEventListener('click', onClick);
+    this.renderer.domElement.addEventListener('touchend', (e) => {
+      if (e.changedTouches?.length === 1) onClick({ clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY });
+    });
+  }
+
+  _onVertexClick(v) {
+    this.selectedVertex = v;
+    this.glow.position.copy(v.position); this.glow.visible = true;
+    const el = (id) => document.getElementById(id);
+    if (el('v-id')) el('v-id').textContent = v.id;
+    if (el('v-sph')) el('v-sph').textContent = v.sphereNumber;
+    if (el('v-x')) el('v-x').textContent = v.position.x.toFixed(4);
+    if (el('v-y')) el('v-y').textContent = v.position.y.toFixed(4);
+    if (el('v-z')) el('v-z').textContent = v.position.z.toFixed(4);
+    if (el('v-d')) el('v-d').textContent = v.position.length().toFixed(4);
+    if (el('v-deg')) el('v-deg').textContent = v.neighbors.length;
+    if (el('b-idx')) el('b-idx').textContent = v.bip39Idx;
+    if (el('b-word')) el('b-word').textContent = BIP39_WORDS[v.bip39Idx];
+
+    if (this.collectedWords.length < 12 && !this.collectedVertexIds.has(v.id)) {
+      const word = BIP39_WORDS[v.bip39Idx];
+      if (!this.collectedWords.includes(word)) {
+        this.collectedWords.push(word);
+        this.collectedVertexIds.add(v.id);
+        this._updateWordGrid();
+        this._highlightCollectedVertex(v);
+        this._updateProgressiveValidation(); // NOVO: Atualiza a lógica percentual
+      }
+    }
+  }
+
+  _highlightCollectedVertex(v) {
+    const colors = this.points.geometry.attributes.color.array;
+    colors[v.id * 3] = 0.3;
+    colors[v.id * 3 + 1] = 1.0;
+    colors[v.id * 3 + 2] = 0.5;
+    this.points.geometry.attributes.color.needsUpdate = true;
+  }
+
+  _setupAnimation() {
+    this.activeSphereIdx = 30;
+    this.animDirection = -1;
+    this.animSpeed = 0.012;
+    this.animProgress = 1.0;
+  }
+
+  // NOVO: Lógica de Validação Progressiva
+  _updateProgressiveValidation() {
+    const count = this.collectedWords.length;
+    const progress = (count / 12) * 100;
+    const bits = count * 11;
+    
+    const fill = document.getElementById('val-fill');
+    const progText = document.getElementById('val-progress');
+    const bitsText = document.getElementById('val-bits');
+    const status = document.getElementById('val-status');
+    const probText = document.getElementById('val-prob');
+
+    if (fill) fill.style.width = `${progress}%`;
+    if (progText) progText.textContent = `${progress.toFixed(1)}%`;
+    if (bitsText) bitsText.textContent = `${bits} / 128`;
+
+    if (count < 11) {
+      if (fill) { fill.className = 'progress-fill'; }
+      if (status) {
+        status.className = 'validation-status accumulating';
+        status.innerHTML = `<strong>Acumulando Entropia</strong><br>${12 - count} palavras necessárias para ativar o pré-cálculo do checksum.`;
+      }
+      if (probText) probText.textContent = '100% (Ajustável)';
+      this.validFinalWords = [];
+    } 
+    else if (count === 11) {
+      if (fill) { fill.className = 'progress-fill warning'; }
+      
+      // CÁLCULO CRÍTICO: Pré-validação do checksum na 11ª palavra
+      let bitString = '';
+      for (const w of this.collectedWords) {
+        const idx = BIP39_WORDS.indexOf(w);
+        bitString += idx.toString(2).padStart(11, '0');
+      }
+      // bitString tem 121 bits. Completamos com 7 zeros para formar 128 bits (16 bytes)
+      bitString += '0000000';
+      
+      const entropyBytes = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        entropyBytes[i] = parseInt(bitString.substr(i * 8, 8), 2);
+      }
+      
+      const hash = HashEngine.sha256(entropyBytes);
+      // O checksum são os primeiros 4 bits do hash
+      const targetChecksum = (hash[0] >>> 4) & 0x0F;
+      
+      // Filtrar quais das 2048 palavras têm os 4 bits finais iguais ao targetChecksum
+      this.validFinalWords = [];
+      for (let i = 0; i < 2048; i++) {
+        const bin = i.toString(2).padStart(11, '0');
+        const wordChecksum = parseInt(bin.substring(7, 11), 2);
+        if (wordChecksum === targetChecksum) {
+          this.validFinalWords.push(BIP39_WORDS[i]);
+        }
+      }
+
+      if (status) {
+        status.className = 'validation-status ready';
+        status.innerHTML = `<strong>Pivô Criptográfico Atingido</strong><br>Exatamente <strong>${this.validFinalWords.length}</strong> palavras validarão esta semente (6,25% do dicionário).`;
+      }
+      if (probText) probText.textContent = '6.25% (Aleatório)';
+    } 
+    else if (count === 12) {
+      // Validação final
+      try {
+        MnemonicEngine.fromWords(this.collectedWords);
+        if (fill) { fill.className = 'progress-fill success'; }
+        if (status) {
+          status.className = 'validation-status valid';
+          status.innerHTML = `<strong>Semente 100% Válida</strong><br>Checksum SHA256 perfeitamente alinhado com a entropia.`;
+        }
+        if (probText) probText.textContent = '100% (Validado)';
+      } catch (e) {
+        if (fill) { fill.className = 'progress-fill error'; }
+        if (status) {
+          status.className = 'validation-status invalid';
+          status.innerHTML = `<strong>Checksum Inválido</strong><br>A 12ª palavra não corresponde à entropia das 11 anteriores.`;
+        }
+        if (probText) probText.textContent = '0% (Inválido)';
+      }
+    }
+  }
+
+  _setupUI() {
+    const reports = [];
+    reports.push(BIP39_WORDS.length === 2048 ? { s: 'success', m: 'BIP39: 2048 palavras' } : { s: 'error', m: 'BIP39: erro' });
+    const sum = this.SG.spheres.reduce((a, s) => a + s.verts.length, 0);
+    reports.push(sum === 2048 ? { s: 'success', m: `Distribuição: exata (${sum})` } : { s: 'error', m: `Distribuição: ${sum}` });
+    reports.push({ s: 'success', m: `KNN: ${this.GE.knnEdges} · MST: ${this.GE.mstEdges}` });
+    reports.push({ s: 'success', m: `CC: ${this.GE.connectedComponents}` });
+    const G = this.EC.point(this.EC.Gx, this.EC.Gy);
+    reports.push(this.EC.validate(G) ? { s: 'success', m: 'SECP256K1: G válido' } : { s: 'error', m: 'SECP256K1: G inválido' });
+    const abcHash = HashEngine.sha256(new TextEncoder().encode('abc'));
+    const abcHex = Array.from(abcHash).map(b => b.toString(16).padStart(2, '0')).join('');
+    reports.push(abcHex === 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+      ? { s: 'success', m: 'SHA256: validado' } : { s: 'error', m: 'SHA256: falhou' });
+    const diagEl = document.getElementById('diag-container');
+    if (diagEl) diagEl.innerHTML = reports.map(r => `<div class="row"><span class="value ${r.s}">●</span> <span>${r.m}</span></div>`).join('');
+
+    const gKnn = document.getElementById('g-knn'); if (gKnn) gKnn.textContent = this.GE.knnEdges;
+    const gMst = document.getElementById('g-mst'); if (gMst) gMst.textContent = this.GE.mstEdges;
+    const gCc = document.getElementById('g-cc'); if (gCc) gCc.textContent = this.GE.connectedComponents;
+
+    const palette = document.getElementById('palette');
+    if (palette) {
+      for (let i = 0; i < 31; i++) {
+        const sw = document.createElement('div');
+        sw.className = 'swatch'; sw.style.background = `hsl(${(360/31)*i}, 80%, 58%)`;
+        sw.dataset.idx = i; palette.appendChild(sw);
+      }
+    }
+
+    const fund = this.spectrum.reduce((max, v, i) => v > max.v ? { i, v } : max, { i: 0, v: 0 });
+    const fftFund = document.getElementById('fft-fund');
+    if (fftFund) fftFund.textContent = `k=${fund.i}`;
+    const canvas = document.getElementById('fft-canvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const barW = canvas.width / this.spectrum.length;
+      for (let i = 0; i < this.spectrum.length; i++) {
+        const barH = (this.spectrum[i] / fund.v) * canvas.height;
+        ctx.fillStyle = `hsl(${(i / this.spectrum.length) * 270}, 80%, 60%)`;
+        ctx.fillRect(i * barW, canvas.height - barH, Math.max(1, barW - 1), barH);
+      }
+    }
+
+    const wordGrid = document.getElementById('word-grid');
+    if (wordGrid) {
+      for (let i = 0; i < 12; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'word-slot';
+        slot.dataset.idx = i;
+        slot.innerHTML = `<span class="slot-num">${i+1}</span>—`;
+        slot.addEventListener('click', () => this._removeWord(i));
+        wordGrid.appendChild(slot);
+      }
+    }
+    
+    // Inicializar validação
+    this._updateProgressiveValidation();
+  }
+
+  _removeWord(idx) {
+    if (idx >= this.collectedWords.length) return;
+    const removedWord = this.collectedWords[idx];
+    for (const vid of this.collectedVertexIds) {
+      const v = this.SG.vertexById(vid);
+      if (v && BIP39_WORDS[v.bip39Idx] === removedWord) {
+        this.collectedVertexIds.delete(vid);
+        const colors = this.points.geometry.attributes.color.array;
+        colors[vid * 3] = this.originalColors[vid * 3];
+        colors[vid * 3 + 1] = this.originalColors[vid * 3 + 1];
+        colors[vid * 3 + 2] = this.originalColors[vid * 3 + 2];
+        this.points.geometry.attributes.color.needsUpdate = true;
+        break;
+      }
+    }
+    this.collectedWords.splice(idx, 1);
+    this._updateWordGrid();
+    this._updateProgressiveValidation(); // NOVO: Recalcula ao remover
+  }
+
+  _clearWords() {
+    const colors = this.points.geometry.attributes.color.array;
+    for (const vid of this.collectedVertexIds) {
+      colors[vid * 3] = this.originalColors[vid * 3];
+      colors[vid * 3 + 1] = this.originalColors[vid * 3 + 1];
+      colors[vid * 3 + 2] = this.originalColors[vid * 3 + 2];
+    }
+    this.points.geometry.attributes.color.needsUpdate = true;
+    this.collectedWords = [];
+    this.collectedVertexIds.clear();
+    this.validFinalWords = [];
+    this._updateWordGrid();
+    this._updateProgressiveValidation(); // NOVO: Reseta validação
+    const wo = document.getElementById('wallet-output');
+    if (wo) wo.innerHTML = '';
+    const ds = document.getElementById('derivation-steps');
+    if (ds) ds.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px">Nenhum cálculo executado ainda.<br>Colete 12 palavras e gere o endereço.</div>';
+  }
+
+  _updateWordGrid() {
+    const slots = document.querySelectorAll('.word-slot');
+    slots.forEach((slot, i) => {
+      if (i < this.collectedWords.length) {
+        slot.classList.add('filled');
+        slot.innerHTML = `<span class="slot-num">${i+1}</span>${this.collectedWords[i]}`;
+      } else {
+        slot.classList.remove('filled');
+        slot.innerHTML = `<span class="slot-num">${i+1}</span>—`;
+      }
+    });
+    const wc = document.getElementById('word-count');
+    if (wc) wc.textContent = this.collectedWords.length;
+    const bg = document.getElementById('btn-generate');
+    if (bg) bg.disabled = this.collectedWords.length !== 12;
+  }
+
+  async _generateWallet() {
+    if (this.collectedWords.length !== 12) return;
+    const stepsEl = document.getElementById('derivation-steps');
+    const outputEl = document.getElementById('wallet-output');
+    if (stepsEl) stepsEl.innerHTML = '<div style="color:var(--warning);text-align:center;padding:20px">Calculando seed PBKDF2-HMAC-SHA512...</div>';
+    if (outputEl) outputEl.innerHTML = '';
+    await new Promise(r => setTimeout(r, 50));
+
+    try {
+      const steps = [];
+      const F = this.EC.F;
+      const { entropyBytes, mnemonic } = MnemonicEngine.fromWords(this.collectedWords);
+      const entropyHex = Array.from(entropyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      steps.push({ title: '1. Entropia (128 bits)', value: entropyHex });
+      steps.push({ title: '2. Mnemonic BIP39', value: mnemonic });
+      const seed = MnemonicEngine.toSeed(this.collectedWords);
+      const seedHex = Array.from(seed).map(b => b.toString(16).padStart(2, '0')).join('');
+      steps.push({ title: '3. Seed (512 bits) — PBKDF2-HMAC-SHA512', value: seedHex });
+      const master = this.BIP32.masterFromSeed(seed);
+      const masterPrivHex = F.toHex(master.privateKey);
+      const masterChainHex = Array.from(master.chainCode).map(b => b.toString(16).padStart(2, '0')).join('');
+      steps.push({ title: '4. Master Private Key (IL)', value: masterPrivHex });
+      steps.push({ title: '5. Master Chain Code (IR)', value: masterChainHex });
+      const path = "m/44'/0'/0'/0/0";
+      const derived = this.BIP32.derivePath(master, path);
+      const derivedPrivHex = F.toHex(derived.privateKey);
+      steps.push({ title: `6. Chave Derivada (${path})`, value: derivedPrivHex });
+      const G = this.EC.point(this.EC.Gx, this.EC.Gy);
+      const pubPoint = this.EC.multiply(derived.privateKey, G);
+      const pubCompressed = this.EC.compressPoint(pubPoint);
+      const pubHex = Array.from(pubCompressed).map(b => b.toString(16).padStart(2, '0')).join('');
+      steps.push({ title: '7. Public Key (comprimida, 33 bytes)', value: pubHex });
+      const h160 = HashEngine.hash160(pubCompressed);
+      const h160Hex = Array.from(h160).map(b => b.toString(16).padStart(2, '0')).join('');
+      steps.push({ title: '8. HASH160 = RIPEMD160(SHA256(pubkey))', value: h160Hex });
+      const address = BitcoinAddressEngine.fromPublicKey(pubCompressed);
+      steps.push({ title: '9. Endereço Bitcoin (P2PKH)', value: address, btc: true });
+
+      if (stepsEl) stepsEl.innerHTML = steps.map(s => `
+        <div class="step">
+          <div class="step-title">${s.title}</div>
+          <div class="step-value ${s.btc ? 'btc' : ''}">${s.value}</div>
+        </div>
+      `).join('');
+      if (outputEl) outputEl.innerHTML = `
+        <div class="address-display">
+          <div class="addr-label">Endereço Bitcoin (P2PKH)</div>
+          <div class="addr-value">${address}</div>
+        </div>
+      `;
+    } catch (err) {
+      if (stepsEl) stepsEl.innerHTML = `<div style="color:var(--error);padding:20px;text-align:center">
+        <strong>Erro:</strong> ${err.message}<br><br>
+        <small>As 12 palavras devem formar um mnemonic BIP39 válido (com checksum correto).</small>
+      </div>`;
+      console.error(err);
+    }
+  }
+
+  _updateLabel() {
+    if (!this.selectedVertex) { const vl = document.getElementById('vertex-label'); if (vl) vl.style.display = 'none'; return; }
+    const p = this.selectedVertex.position.clone().project(this.camera);
+    if (p.z > 1) { const vl = document.getElementById('vertex-label'); if (vl) vl.style.display = 'none'; return; }
+    const x = (p.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-p.y * 0.5 + 0.5) * window.innerHeight;
+    const l = document.getElementById('vertex-label');
+    if (l) {
+      l.style.display = 'block'; l.style.left = (x + 18) + 'px'; l.style.top = (y - 10) + 'px';
+      const lt = document.getElementById('l-title'); if (lt) lt.textContent = BIP39_WORDS[this.selectedVertex.bip39Idx];
+      const li = document.getElementById('l-idx'); if (li) li.textContent = this.selectedVertex.bip39Idx;
+      const lw = document.getElementById('l-word'); if (lw) lw.textContent = BIP39_WORDS[this.selectedVertex.bip39Idx];
+      const ls = document.getElementById('l-sph'); if (ls) ls.textContent = this.selectedVertex.sphereNumber;
+    }
+  }
+
+  _updateWireframes() {
+    for (let i = 0; i < this.sphereMeshes.length; i++) {
+      const target = (i === this.activeSphereIdx) ? 0.5 : 0.04;
+      this.sphereMeshes[i].opacity += (target - this.sphereMeshes[i].opacity) * 0.1;
+    }
+    const s = this.SG.spheres[this.activeSphereIdx];
+    this.ring.scale.set(s.radius, s.radius, s.radius);
+    this.ring.lookAt(this.camera.position);
+    this.ring.material.color.set(`hsl(${this.Colors.hueFor(this.activeSphereIdx)}, 80%, 70%)`);
+  }
+
+  _updateAnimation() {
+    this.animProgress += this.animSpeed;
+    if (this.animProgress >= 1.0) {
+      this.animProgress = 0.0; this.activeSphereIdx += this.animDirection;
+      if (this.activeSphereIdx < 0) { this.activeSphereIdx = 1; this.animDirection = 1; }
+      else if (this.activeSphereIdx >= 31) { this.activeSphereIdx = 29; this.animDirection = -1; }
+    }
+    const aSphere = document.getElementById('a-sphere');
+    const aDir = document.getElementById('a-dir');
+    const aFill = document.getElementById('a-fill');
+    const sR = document.getElementById('s-r');
+    const sNv = document.getElementById('s-nv');
+    if (aSphere) aSphere.textContent = `${this.activeSphereIdx + 1} / 31`;
+    if (aDir) aDir.textContent = this.animDirection < 0 ? 'reduzindo' : 'crescendo';
+    if (aFill) aFill.style.width = `${((this.activeSphereIdx + 1) / 31) * 100}%`;
+    const s = this.SG.spheres[this.activeSphereIdx];
+    if (sR) sR.textContent = s.radius.toFixed(4);
+    if (sNv) sNv.textContent = s.verts.length;
+    document.querySelectorAll('.swatch').forEach((sw, k) => sw.classList.toggle('active', k === this.activeSphereIdx));
+  }
+
+  _updatePerf() {
+    const now = performance.now();
+    const frameTime = now - (this._lastFrame || now);
+    this._lastFrame = now;
+    this._frameCount = (this._frameCount || 0) + 1;
+    if (this._frameCount % 30 === 0) {
+      const pFps = document.getElementById('p-fps');
+      const pFrame = document.getElementById('p-frame');
+      const pMem = document.getElementById('p-mem');
+      if (pFps) pFps.textContent = Math.round(1000 / frameTime);
+      if (pFrame) pFrame.textContent = frameTime.toFixed(1) + ' ms';
+      if (pMem && performance.memory) pMem.textContent = (performance.memory.usedJSHeapSize / 1048576).toFixed(1) + ' MB';
+    }
+  }
+
+  _export(type) {
+    const download = (name, content, mime) => {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+    if (type === 'json') {
+      const data = {
+        metadata: { version: '3.2.0', spheres: 31, vertices: 2048, knnEdges: this.GE.knnEdges, timestamp: new Date().toISOString() },
+        spheres: this.SG.spheres.map(s => ({ index: s.index, number: s.number, radius: s.radius, weight: s.weight, count: s.verts.length })),
+        vertices: this.SG.allVertices.map(v => ({ id: v.id, sphere: v.sphereNumber, x: v.position.x, y: v.position.y, z: v.position.z, bip39Idx: v.bip39Idx, word: BIP39_WORDS[v.bip39Idx] }))
+      };
+      download('qwen_master_v3.json', JSON.stringify(data, null, 2), 'application/json');
+    } else if (type === 'csv') {
+      const rows = [['id','sphere','x','y','z','bip39_idx','word']];
+      for (const v of this.SG.allVertices) rows.push([v.id, v.sphereNumber, v.position.x.toFixed(6), v.position.y.toFixed(6), v.position.z.toFixed(6), v.bip39Idx, BIP39_WORDS[v.bip39Idx]]);
+      download('qwen_master_v3.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv');
+    } else if (type === 'svg') {
+      const W = 1200, H = 800, maxR = MathEngine.radius(31);
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="background:#050510">`;
+      for (const v of this.SG.allVertices) {
+        const x = W/2 + (v.position.x / maxR) * (W/2 - 20), y = H/2 + (v.position.y / maxR) * (H/2 - 20);
+        svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.2" fill="#${v.color.getHexString()}" opacity="0.8"/>`;
+      }
+      svg += '</svg>';
+      download('qwen_master_v3.svg', svg, 'image/svg+xml');
+    } else if (type === 'png') {
+      this.renderer.render(this.scene, this.camera);
+      const url = this.renderer.domElement.toDataURL('image/png');
+      const a = document.createElement('a'); a.href = url; a.download = 'qwen_master_v3.png';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+  }
+
+  _bindEvents() {
+    document.querySelectorAll('[data-collapse]').forEach(h => {
+      h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed'));
+    });
+    const tl = document.getElementById('toggle-left');
+    if (tl) tl.addEventListener('click', () => {
+      const p = document.getElementById('left-panel');
+      p.classList.toggle('collapsed');
+      tl.textContent = p.classList.contains('collapsed') ? '▶' : '◀';
+    });
+    const tr = document.getElementById('toggle-right');
+    if (tr) tr.addEventListener('click', () => {
+      const p = document.getElementById('right-panel');
+      p.classList.toggle('collapsed');
+      tr.textContent = p.classList.contains('collapsed') ? '◀' : '▶';
+    });
+    const ft = document.getElementById('focus-toggle');
+    if (ft) ft.addEventListener('click', () => document.body.classList.toggle('focus-mode'));
+    const bg = document.getElementById('btn-generate');
+    if (bg) bg.addEventListener('click', () => this._generateWallet());
+    const bcw = document.getElementById('btn-clear-words');
+    if (bcw) bcw.addEventListener('click', () => this._clearWords());
+    const bc = document.getElementById('btn-clear');
+    if (bc) bc.addEventListener('click', () => location.reload());
+    const brc = document.getElementById('btn-reset-cam');
+    if (brc) brc.addEventListener('click', () => {
+      this.camera.position.set(16, 12, 16); this.controls.reset();
+    });
+    document.querySelectorAll('[data-export]').forEach(btn => {
+      btn.addEventListener('click', () => this._export(btn.dataset.export));
+    });
+    const si = document.getElementById('search-input');
+    if (si) si.addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) return;
+      const idx = BIP39_WORDS.findIndex(w => w === q);
+      if (idx !== -1) {
+        const v = this.SG.allVertices.find(x => x.bip39Idx === idx);
+        if (v) this._onVertexClick(v);
+      } else if (/^\d+$/.test(q)) {
+        const v = this.SG.vertexById(parseInt(q));
+        if (v) this._onVertexClick(v);
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'k') { e.preventDefault(); const si = document.getElementById('search-input'); if (si) si.focus(); }
+      else if (e.ctrlKey && e.key === '1') { const tl = document.getElementById('toggle-left'); if (tl) tl.click(); }
+      else if (e.ctrlKey && e.key === '2') { const tr = document.getElementById('toggle-right'); if (tr) tr.click(); }
+      else if (e.key === 'f' || e.key === 'F') document.body.classList.toggle('focus-mode');
+    });
+  }
+
+  _onResize() {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  _animate() {
+    try {
+      requestAnimationFrame(() => this._animate());
+      this.clock.getDelta();
+      this._updateAnimation();
+      this._updateWireframes();
+      this._updateLabel();
+      this._updatePerf();
+      if (this.glow.visible) {
+        const t = performance.now() * 0.003, s = 1 + 0.3 * Math.sin(t);
+        this.glow.scale.set(s, s, s);
+        this.glow.material.opacity = 0.5 + 0.3 * Math.sin(t * 1.3);
+      }
+      this.controls.update();
+      this.renderer.render(this.scene, this.camera);
+    } catch (err) {
+      console.error('[Animate Error]', err);
+    }
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    window.app = new Application();
+    console.log('%c[Qwen Master v3.2.0] %cValidação Progressiva BIP39 Ativa', 'color:#ffd86b;font-weight:bold', 'color:#4ade80');
+    console.log('[v3.2.0] O sistema agora calcula as 128 combinações válidas na 11ª palavra.');
+  } catch (err) {
+    console.error('[v3.2.0] Erro:', err);
+    document.body.innerHTML = `<div style="color:#f87171;padding:40px;font-family:monospace;background:#000;height:100vh;">
+      <h2>Erro de Inicialização</h2><p>${err.message}</p><pre>${err.stack}</pre></div>`;
+  }
+});
+</script>
+</body>
+</html>

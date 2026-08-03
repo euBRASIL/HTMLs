@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECC Scalar Weight Visualizer 36x — SECP256k1</title>
+<style>
+  /* ============================================================
+     ECC Scalar Weight Visualizer 36x
+     Tema escuro, layout responsivo em grid.
+     ============================================================ */
+  :root{
+    --bg-0:#0a0e14;
+    --bg-1:#11161d;
+    --bg-2:#161d26;
+    --bg-3:#1c2531;
+    --border:#2a3442;
+    --text-0:#e6edf3;
+    --text-1:#9aa7b4;
+    --text-2:#6b7684;
+    --accent:#4cc9f0;
+    --accent-2:#f72585;
+    --accent-3:#7209b7;
+    --accent-4:#4361ee;
+    --good:#06d6a0;
+    --warn:#ffd166;
+    --bad:#ef476f;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--text-0);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.45}
+  a{color:var(--accent)}
+  header{
+    padding:14px 18px;background:linear-gradient(90deg,#0d1117,#131a24);
+    border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap
+  }
+  header h1{font-size:16px;margin:0;letter-spacing:.3px}
+  header .tag{font-family:var(--mono);font-size:11px;color:var(--text-1);
+    border:1px solid var(--border);padding:2px 8px;border-radius:999px}
+  header .note{margin-left:auto;font-size:12px;color:var(--text-2);max-width:60%}
+  main{display:grid;grid-template-columns:360px 1fr;gap:12px;padding:12px}
+  @media (max-width:1100px){main{grid-template-columns:1fr}}
+  .panel{background:var(--bg-1);border:1px solid var(--border);border-radius:10px;padding:12px}
+  .panel h2{font-size:13px;margin:0 0 10px;color:var(--accent);
+    text-transform:uppercase;letter-spacing:1px;font-weight:600}
+  .panel h3{font-size:12px;margin:10px 0 6px;color:var(--text-1);
+    text-transform:uppercase;letter-spacing:.5px}
+  label{display:block;font-size:12px;color:var(--text-1);margin:6px 0 3px}
+  input[type="text"],input[type="number"],select,textarea{
+    width:100%;background:var(--bg-2);color:var(--text-0);
+    border:1px solid var(--border);border-radius:6px;padding:7px 9px;
+    font-family:var(--mono);font-size:12px;outline:none
+  }
+  input[type="text"]:focus,input[type="number"]:focus{border-color:var(--accent)}
+  input[type="range"]{width:100%;accent-color:var(--accent)}
+  button{
+    background:var(--bg-3);color:var(--text-0);border:1px solid var(--border);
+    border-radius:6px;padding:7px 10px;cursor:pointer;font-size:12px;transition:.15s
+  }
+  button:hover{background:var(--accent);color:#001018;border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#001018;border-color:var(--accent);font-weight:600}
+  button.primary:hover{background:#7ad8f5}
+  .row{display:flex;gap:8px;align-items:center}
+  .row > *{flex:1}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .stat{background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:6px 8px}
+  .stat .k{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px}
+  .stat .v{font-family:var(--mono);font-size:13px;color:var(--text-0);word-break:break-all}
+  .weights{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:8px}
+  .weight{background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:4px}
+  .weight .wn{font-family:var(--mono);font-size:10px;color:var(--text-2);text-align:center}
+  .weight input[type="range"]{width:100%;height:18px}
+  .weight input[type="number"]{width:100%;font-size:10px;padding:2px 3px;text-align:center}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:900px){.charts{grid-template-columns:1fr}}
+  .chart{background:var(--bg-1);border:1px solid var(--border);border-radius:10px;padding:10px}
+  .chart h3{margin:0 0 6px;font-size:12px;color:var(--text-1);text-transform:uppercase;letter-spacing:.5px}
+  canvas{display:block;width:100%;height:auto;background:var(--bg-2);border-radius:6px}
+  .debug{font-family:var(--mono);font-size:11px;color:var(--text-1);
+    background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:8px;
+    max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+  .mode-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .mode-btns button{font-size:11px;padding:6px 4px}
+  .mode-btns button.active{background:var(--accent);color:#001018;border-color:var(--accent)}
+  .disclaimer{
+    background:rgba(247,37,133,.08);border:1px solid rgba(247,37,133,.35);
+    color:#ffb3d1;padding:8px 10px;border-radius:6px;font-size:11px;margin-top:10px
+  }
+  .coord{font-family:var(--mono);font-size:11px;color:var(--text-1);
+    background:var(--bg-2);border:1px solid var(--border);border-radius:6px;
+    padding:6px 8px;word-break:break-all;margin-bottom:6px}
+  .coord b{color:var(--accent)}
+  .tabs{display:flex;gap:4px;margin-bottom:8px;border-bottom:1px solid var(--border)}
+  .tabs button{background:transparent;border:none;color:var(--text-2);
+    padding:6px 10px;border-bottom:2px solid transparent;border-radius:0;font-size:12px}
+  .tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  .footer{padding:10px 18px;color:var(--text-2);font-size:11px;text-align:center;border-top:1px solid var(--border)}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text-1);margin-top:6px}
+  .legend span{display:inline-flex;align-items:center;gap:4px}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ECC Scalar Weight Visualizer 36x</h1>
+  <span class="tag">SECP256k1</span>
+  <span class="tag">BigInt</span>
+  <span class="tag">v1.0</span>
+  <span class="note">Camada de parametrização e análise sobre a multiplicação escalar.
+    Os 36 pesos <b>não</b> alteram a matemática da curva.</span>
+</header>
+
+<main>
+  <!-- ======================= COLUNA ESQUERDA ======================= -->
+  <section class="panel">
+    <h2>Entrada Escalar</h2>
+    <label>Escalar k (hexadecimal)</label>
+    <input type="text" id="kHex" value="0x1" spellcheck="false">
+    <div class="grid-2" style="margin-top:6px">
+      <button id="btnRandom" class="primary">k Aleatório</button>
+      <button id="btnCalc">Calcular Q = k·G</button>
+    </div>
+
+    <h3 style="margin-top:14px">Gerador G</h3>
+    <div class="coord"><b>Gx</b> = <span id="gxC">—</span></div>
+    <div class="coord"><b>Gy</b> = <span id="gyC">—</span></div>
+
+    <h3>Ponto Calculado Q = k·G</h3>
+    <div class="coord"><b>Qx</b> = <span id="qxC">—</span></div>
+    <div class="coord"><b>Qy</b> = <span id="qyC">—</span></div>
+
+    <h3 style="margin-top:14px">Parâmetros da Sigmóide</h3>
+    <div class="row">
+      <div>
+        <label>k (inclinação) = <span id="kVal">10</span></label>
+        <input type="range" id="kSlider" min="0.1" max="100" step="0.1" value="10">
+      </div>
+      <div>
+        <label>c (centro) = <span id="cVal">0.5</span></label>
+        <input type="range" id="cSlider" min="0" max="1" step="0.01" value="0.5">
+      </div>
+    </div>
+
+    <h3>Modos de Ajuste (Magnitude)</h3>
+    <div class="mode-btns">
+      <button data-mode="small">Pequena</button>
+      <button data-mode="medium" class="active">Média</button>
+      <button data-mode="high">Alta</button>
+      <button data-mode="max">Máxima</button>
+    </div>
+
+    <h3 style="margin-top:14px">36 Pesos Independentes (W01…W36)</h3>
+    <div class="row" style="margin-bottom:6px">
+      <button id="btnResetW">Resetar (100)</button>
+      <button id="btnRandW">Aleatório</button>
+      <button id="btnUniform">Uniforme</button>
+    </div>
+    <div class="weights" id="weightsGrid"></div>
+
+    <div class="disclaimer">
+      <b>Aviso matemático:</b> os 36 pesos constituem uma camada de
+      representação/parametrização dos dados da curva. Eles <b>não</b>
+      modificam a multiplicação escalar nem as propriedades criptográficas
+      da SECP256k1.
+    </div>
+  </section>
+
+  <!-- ======================= COLUNA DIREITA ======================= -->
+  <section>
+    <div class="panel" style="margin-bottom:12px">
+      <h2>Análise Estatística do Vetor de Pesos</h2>
+      <div class="grid-4" id="statsGrid"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Visualizações — 36 Pesos Dinâmicos</h2>
+      <div class="charts">
+        <div class="chart">
+          <h3>Radar — W01…W36</h3>
+          <canvas id="radar" width="520" height="520"></canvas>
+          <div class="legend">
+            <span><i style="background:#4cc9f0"></i>Pesos normalizados</span>
+            <span><i style="background:#f72585"></i>Saída sigmóide</span>
+          </div>
+        </div>
+        <div class="chart">
+          <h3>Barras — 36 pesos</h3>
+          <canvas id="bars" width="520" height="520"></canvas>
+        </div>
+        <div class="chart">
+          <h3>Área Polar — 36 regiões</h3>
+          <canvas id="polar" width="520" height="520"></canvas>
+        </div>
+        <div class="chart">
+          <h3>HeatMap 6×6</h3>
+          <canvas id="heat" width="520" height="520"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <h2>Debug / Espaço de Características</h2>
+      <div class="tabs">
+        <button class="active" data-tab="tab-hex">Hex</button>
+        <button data-tab="tab-dec">Decimal</button>
+        <button data-tab="tab-bin">Binário</button>
+        <button data-tab="tab-sig">Sigmóide</button>
+        <button data-tab="tab-vec">Vetores</button>
+      </div>
+      <div id="tab-hex" class="tab-content active debug"></div>
+      <div id="tab-dec" class="tab-content debug"></div>
+      <div id="tab-bin" class="tab-content debug"></div>
+      <div id="tab-sig" class="tab-content debug"></div>
+      <div id="tab-vec" class="tab-content debug"></div>
+    </div>
+  </section>
+</main>
+
+<div class="footer">
+  ECC Scalar Weight Visualizer 36x — SECP256k1 · Arquivo único · Offline · Sem backend
+</div>
+
+<script>
+/* ================================================================
+   SEÇÃO 1 — CONSTANTES DA CURVA SECP256k1
+   ----------------------------------------------------------------
+   A curva é y² ≡ x³ + 7 (mod p).
+   Todas as operações usam BigInt nativo para precisão de 256 bits.
+   ================================================================ */
+const P  = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn;
+const N  = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
+const A  = 0n;
+const B  = 7n;
+const Gx = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798n;
+const Gy = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8n;
+const ZERO = 0n, ONE = 1n;
+
+/* ================================================================
+   SEÇÃO 2 — ARITMÉTICA MODULAR (BigInt)
+   ----------------------------------------------------------------
+   - modInv via Fermat (p é primo): a^(p-2) mod p
+   - Ponto no infinito representado por null
+   ================================================================ */
+function mod(a,m){const r=a%m;return r<0n?r+m:r}
+function modPow(b,e,m){
+  let r=1n; b=mod(b,m);
+  while(e>0n){
+    if(e&1n) r=mod(r*b,m);
+    e>>=1n; b=mod(b*b,m);
+  }
+  return r;
+}
+function modInv(a,m){return modPow(mod(a,m), m-2n, m)}
+
+/* ================================================================
+   SEÇÃO 3 — OPERAÇÕES COM PONTOS DA CURVA
+   ----------------------------------------------------------------
+   - pointAdd: adição de pontos (fórmulas afins)
+   - pointDouble: duplicação
+   - scalarMul: double-and-add (binário da esquerda para a direita)
+   ================================================================ */
+function pointAdd(P1,P2){
+  if(!P1) return P2;
+  if(!P2) return P1;
+  const [x1,y1]=P1,[x2,y2]=P2;
+  if(x1===x2){
+    if(y1!==y2) return null;            // P + (-P) = O
+    return pointDouble(P1);
+  }
+  const s = mod((y2-y1)*modInv(x2-x1,P), P);
+  const x3 = mod(s*s - x1 - x2, P);
+  const y3 = mod(s*(x1-x3) - y1, P);
+  return [x3,y3];
+}
+function pointDouble(P1){
+  if(!P1) return null;
+  const [x1,y1]=P1;
+  if(y1===0n) return null;
+  const s = mod((3n*x1*x1 + A)*modInv(2n*y1,P), P);
+  const x3 = mod(s*s - 2n*x1, P);
+  const y3 = mod(s*(x1-x3) - y1, P);
+  return [x3,y3];
+}
+function scalarMul(k, Pt){
+  let R=null; let Q=Pt; k=mod(k,N);
+  while(k>0n){
+    if(k&1n) R=pointAdd(R,Q);
+    Q=pointDouble(Q);
+    k>>=1n;
+  }
+  return R;
+}
+
+/* ================================================================
+   SEÇÃO 4 — MODELO DOS 36 PESOS
+   ----------------------------------------------------------------
+   Estratégia:
+     1. Concatenamos Qx e Qy (cada um com 256 bits) → 512 bits.
+     2. Dividimos em 36 regiões de tamanhos ~iguais (14 ou 15 bits).
+     3. Cada região gera um valor normalizado r_i ∈ [0,1].
+     4. Aplicamos a sigmóide S(r_i) = 1/(1+exp(-k*(r_i-c))).
+     5. Multiplicamos pelo peso W_i (slider, 0..1000 → 0..1).
+     6. Saída: v_i = W_i · S(r_i) ∈ [0,1].
+   Isso produz um feature vector V=(v_1,...,v_36) contínuo e
+   diferenciável em relação aos parâmetros.
+   ================================================================ */
+const N_WEIGHTS = 36;
+const WEIGHT_NAMES = Array.from({length:N_WEIGHTS},(_,i)=>"W"+String(i+1).padStart(2,"0"));
+
+// Estado global
+const state = {
+  k: 1n,
+  G: [Gx,Gy],
+  Q: null,
+  weights: new Array(N_WEIGHTS).fill(100),   // sliders (0..1000)
+  regions: new Array(N_WEIGHTS).fill(0),     // valores normalizados 0..1
+  sigOut:  new Array(N_WEIGHTS).fill(0),     // saída da sigmóide
+  finalV:  new Array(N_WEIGHTS).fill(0),     // vetor final
+  kSig: 10, cSig: 0.5
+};
+
+function sigmoid(x,k,c){ return 1/(1+Math.exp(-k*(x-c))); }
+
+/* Extrai 36 regiões dos bits de Qx e Qy, normaliza cada uma em [0,1]. */
+function computeRegions(Qxv, Qyv){
+  // Concatena: 256 bits de Qx + 256 bits de Qy = 512 bits
+  const totalBits = 512;
+  // Distribui 512 bits em 36 regiões: algumas com 14, outras com 15 bits
+  // 36*14 = 504, faltam 8 → 8 regiões terão 15 bits
+  const sizes = new Array(N_WEIGHTS).fill(14);
+  for(let i=0;i<8;i++) sizes[i]=15;
+  const out = new Array(N_WEIGHTS);
+  let offset = 0;
+  for(let i=0;i<N_WEIGHTS;i++){
+    const sz = sizes[i];
+    // Extrai sz bits a partir de 'offset' do bloco concatenado (Qx|Qy)
+    let val = 0n;
+    for(let b=0;b<sz;b++){
+      const pos = offset + b;            // 0..511
+      let bit;
+      if(pos < 256){
+        // bit em Qx, posição (255-pos) a partir do LSB
+        bit = (Qxv >> BigInt(255-pos)) & 1n;
+      } else {
+        const p2 = pos - 256;
+        bit = (Qyv >> BigInt(255-p2)) & 1n;
+      }
+      val = (val<<1n) | bit;
+    }
+    const maxVal = (1n<<BigInt(sz)) - 1n;
+    out[i] = Number(val) / Number(maxVal);   // normalização [0,1]
+    offset += sz;
+  }
+  return out;
+}
+
+function recomputeVector(){
+  if(!state.Q){
+    state.sigOut.fill(0); state.finalV.fill(0); state.regions.fill(0);
+    return;
+  }
+  const [Qxv,Qyv] = state.Q;
+  state.regions = computeRegions(Qxv,Qyv);
+  for(let i=0;i<N_WEIGHTS;i++){
+    const s = sigmoid(state.regions[i], state.kSig, state.cSig);
+    state.sigOut[i] = s;
+    state.finalV[i] = (state.weights[i]/1000) * s;
+  }
+}
+
+/* ================================================================
+   SEÇÃO 5 — ESTATÍSTICAS DO VETOR
+   ================================================================ */
+function computeStats(v){
+  const n=v.length; if(n===0) return null;
+  let mn=Infinity, mx=-Infinity, sum=0;
+  for(const x of v){ if(x<mn)mn=x; if(x>mx)mx=x; sum+=x; }
+  const mean = sum/n;
+  let varSum=0;
+  for(const x of v) varSum += (x-mean)*(x-mean);
+  const sd = Math.sqrt(varSum/n);
+  // Entropia aproximada (Shannon) tratando v como distribuição normalizada
+  const total = sum || 1e-12;
+  let H=0;
+  for(const x of v){
+    const p = x/total;
+    if(p>0) H -= p*Math.log2(p);
+  }
+  // Centro de massa (posição ponderada no índice)
+  let cm=0;
+  for(let i=0;i<n;i++) cm += i*v[i];
+  cm /= (total||1e-12);
+  // Magnitude global (norma L2)
+  let mag=0;
+  for(const x of v) mag += x*x;
+  mag = Math.sqrt(mag);
+  return {min:mn,max:mx,mean,sd,H,sum,cm,mag};
+}
+
+/* ================================================================
+   SEÇÃO 6 — RENDERIZAÇÃO DOS GRÁFICOS (Canvas 2D)
+   ----------------------------------------------------------------
+   Sem dependências externas. Cada gráfico é desenhado do zero.
+   ================================================================ */
+function setupHiDPI(canvas){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(320, Math.floor(rect.width));
+  const h = w; // quadrado
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.height = h+"px";
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx,w,h};
+}
+
+/* ---------- RADAR ---------- */
+function drawRadar(){
+  const c = document.getElementById("radar");
+  const {ctx,w,h} = setupHiDPI(c);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2, R=Math.min(w,h)/2 - 40;
+  // Grades
+  ctx.strokeStyle="#2a3442"; ctx.lineWidth=1;
+  for(let ring=1;ring<=5;ring++){
+    const r=R*ring/5;
+    ctx.beginPath();
+    for(let i=0;i<=N_WEIGHTS;i++){
+      const a = -Math.PI/2 + i*2*Math.PI/N_WEIGHTS;
+      const x = cx + r*Math.cos(a), y = cy + r*Math.sin(a);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  // Eixos
+  for(let i=0;i<N_WEIGHTS;i++){
+    const a = -Math.PI/2 + i*2*Math.PI/N_WEIGHTS;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+R*Math.cos(a), cy+R*Math.sin(a));
+    ctx.stroke();
+    // Rótulos
+    ctx.fillStyle="#6b7684";
+    ctx.font="9px ui-monospace,monospace";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    const lx = cx + (R+14)*Math.cos(a);
+    const ly = cy + (R+14)*Math.sin(a);
+    if(i%3===0) ctx.fillText(WEIGHT_NAMES[i], lx, ly);
+  }
+  // Polígono dos pesos normalizados (W/1000)
+  function poly(values, color, fill){
+    ctx.beginPath();
+    for(let i=0;i<=N_WEIGHTS;i++){
+      const idx = i%N_WEIGHTS;
+      const a = -Math.PI/2 + idx*2*Math.PI/N_WEIGHTS;
+      const r = R*values[idx];
+      const x = cx + r*Math.cos(a), y = cy + r*Math.sin(a);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    if(fill){ ctx.fillStyle=fill; ctx.fill(); }
+    ctx.strokeStyle=color; ctx.lineWidth=1.6; ctx.stroke();
+  }
+  const normW = state.weights.map(x=>x/1000);
+  poly(normW, "#4cc9f0", "rgba(76,201,240,0.15)");
+  poly(state.finalV, "#f72585", "rgba(247,37,133,0.18)");
+  // Pontos
+  for(let i=0;i<N_WEIGHTS;i++){
+    const a = -Math.PI/2 + i*2*Math.PI/N_WEIGHTS;
+    const r = R*state.finalV[i];
+    ctx.beginPath();
+    ctx.arc(cx+r*Math.cos(a), cy+r*Math.sin(a), 2.5, 0, 2*Math.PI);
+    ctx.fillStyle="#f72585"; ctx.fill();
+  }
+}
+
+/* ---------- BARRAS ---------- */
+function drawBars(){
+  const c = document.getElementById("bars");
+  const {ctx,w,h} = setupHiDPI(c);
+  ctx.clearRect(0,0,w,h);
+  const padL=30, padR=10, padT=10, padB=30;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const bw = plotW/N_WEIGHTS;
+  // Eixos
+  ctx.strokeStyle="#2a3442"; ctx.beginPath();
+  ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH);
+  ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
+  // Grid horizontal
+  ctx.fillStyle="#6b7684"; ctx.font="9px ui-monospace,monospace";
+  for(let i=0;i<=5;i++){
+    const y = padT + plotH*(1-i/5);
+    ctx.strokeStyle="#1c2531";
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
+    ctx.textAlign="right"; ctx.textBaseline="middle";
+    ctx.fillText((i/5).toFixed(1), padL-4, y);
+  }
+  // Barras
+  for(let i=0;i<N_WEIGHTS;i++){
+    const v = state.finalV[i];
+    const x = padL + i*bw + 1;
+    const bh = plotH*v;
+    const y = padT + plotH - bh;
+    const grad = ctx.createLinearGradient(0,y,0,y+bh);
+    grad.addColorStop(0,"#4cc9f0");
+    grad.addColorStop(1,"#4361ee");
+    ctx.fillStyle=grad;
+    ctx.fillRect(x,y,bw-2,bh);
+    if(i%6===0){
+      ctx.fillStyle="#6b7684";
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      ctx.fillText(WEIGHT_NAMES[i], x+(bw-2)/2, padT+plotH+4);
+    }
+  }
+}
+
+/* ---------- POLAR AREA ---------- */
+function drawPolar(){
+  const c = document.getElementById("polar");
+  const {ctx,w,h} = setupHiDPI(c);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2, R=Math.min(w,h)/2 - 30;
+  // Círculos guia
+  ctx.strokeStyle="#2a3442";
+  for(let i=1;i<=4;i++){
+    ctx.beginPath(); ctx.arc(cx,cy,R*i/4,0,2*Math.PI); ctx.stroke();
+  }
+  const maxV = Math.max(1e-9, ...state.finalV);
+  for(let i=0;i<N_WEIGHTS;i++){
+    const a0 = -Math.PI/2 + i*2*Math.PI/N_WEIGHTS;
+    const a1 = a0 + 2*Math.PI/N_WEIGHTS;
+    const r = R*(state.finalV[i]/maxV);
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,a0,a1);
+    ctx.closePath();
+    const hue = 190 + i*4;
+    ctx.fillStyle = `hsla(${hue},80%,55%,0.75)`;
+    ctx.fill();
+    ctx.strokeStyle="#0a0e14"; ctx.lineWidth=1; ctx.stroke();
+  }
+}
+
+/* ---------- HEATMAP 6x6 ---------- */
+function drawHeat(){
+  const c = document.getElementById("heat");
+  const {ctx,w,h} = setupHiDPI(c);
+  ctx.clearRect(0,0,w,h);
+  const pad=30;
+  const cell = (Math.min(w,h)-2*pad)/6;
+  const maxV = Math.max(1e-9, ...state.finalV);
+  for(let i=0;i<N_WEIGHTS;i++){
+    const row = Math.floor(i/6), col = i%6;
+    const v = state.finalV[i]/maxV;
+    // Escala de cor: frio → quente
+    const r = Math.floor(20 + v*220);
+    const g = Math.floor(40 + (1-Math.abs(v-0.5)*2)*140);
+    const b = Math.floor(200 - v*180);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(pad+col*cell, pad+row*cell, cell-2, cell-2);
+    ctx.fillStyle="#e6edf3";
+    ctx.font="10px ui-monospace,monospace";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(WEIGHT_NAMES[i], pad+col*cell+cell/2-1, pad+row*cell+cell/2-6);
+    ctx.fillStyle="rgba(255,255,255,0.85)";
+    ctx.fillText(v.toFixed(2), pad+col*cell+cell/2-1, pad+row*cell+cell/2+8);
+  }
+  // Rótulos de eixo
+  ctx.fillStyle="#6b7684"; ctx.font="10px ui-monospace,monospace";
+  ctx.textAlign="right"; ctx.textBaseline="middle";
+  for(let r=0;r<6;r++) ctx.fillText("R"+(r+1), pad-4, pad+r*cell+cell/2);
+  ctx.textAlign="center"; ctx.textBaseline="top";
+  for(let c=0;c<6;c++) ctx.fillText("C"+(c+1), pad+c*cell+cell/2, pad+6*cell+4);
+}
+
+/* ================================================================
+   SEÇÃO 7 — ATUALIZAÇÃO DE UI
+   ================================================================ */
+function fmtHex(n, bits=256){
+  const s = n.toString(16).padStart(bits/4,"0");
+  return "0x"+s;
+}
+function fmtDec(n){ return n.toString(10); }
+function fmtBin(n, bits=256){
+  return n.toString(2).padStart(bits,"0");
+}
+
+function updateCoords(){
+  document.getElementById("gxC").textContent = fmtHex(Gx);
+  document.getElementById("gyC").textContent = fmtHex(Gy);
+  if(state.Q){
+    document.getElementById("qxC").textContent = fmtHex(state.Q[0]);
+    document.getElementById("qyC").textContent = fmtHex(state.Q[1]);
+  } else {
+    document.getElementById("qxC").textContent = "—";
+    document.getElementById("qyC").textContent = "—";
+  }
+}
+
+function updateStats(){
+  const s = computeStats(state.finalV);
+  const grid = document.getElementById("statsGrid");
+  if(!s){ grid.innerHTML = '<div class="stat"><div class="k">—</div><div class="v">sem ponto</div></div>'; return; }
+  const items = [
+    ["Mínimo", s.min.toFixed(6)],
+    ["Máximo", s.max.toFixed(6)],
+    ["Média",  s.mean.toFixed(6)],
+    ["Desvio Padrão", s.sd.toFixed(6)],
+    ["Entropia (bits)", s.H.toFixed(4)],
+    ["Soma", s.sum.toFixed(4)],
+    ["Centro de Massa", s.cm.toFixed(3)],
+    ["Magnitude (L2)", s.mag.toFixed(4)]
+  ];
+  grid.innerHTML = items.map(([k,v])=>
+    `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`
+  ).join("");
+}
+
+function updateDebug(){
+  const hex = document.getElementById("tab-hex");
+  const dec = document.getElementById("tab-dec");
+  const bin = document.getElementById("tab-bin");
+  const sig = document.getElementById("tab-sig");
+  const vec = document.getElementById("tab-vec");
+  if(!state.Q){
+    hex.textContent="k="+fmtHex(state.k)+"\nQ = ponto inválido";
+    dec.textContent="—"; bin.textContent="—"; sig.textContent="—"; vec.textContent="—";
+    return;
+  }
+  hex.textContent =
+    `k  = ${fmtHex(state.k)}\n`+
+    `Gx = ${fmtHex(Gx)}\n`+
+    `Gy = ${fmtHex(Gy)}\n`+
+    `Qx = ${fmtHex(state.Q[0])}\n`+
+    `Qy = ${fmtHex(state.Q[1])}`;
+  dec.textContent =
+    `k  = ${fmtDec(state.k)}\n`+
+    `Qx = ${fmtDec(state.Q[0])}\n`+
+    `Qy = ${fmtDec(state.Q[1])}`;
+  bin.textContent =
+    `k  = ${fmtBin(state.k,256)}\n`+
+    `Qx = ${fmtBin(state.Q[0])}\n`+
+    `Qy = ${fmtBin(state.Q[1])}`;
+  let s="";
+  for(let i=0;i<N_WEIGHTS;i++){
+    s += `${WEIGHT_NAMES[i]}  r=${state.regions[i].toFixed(4)}  `+
+         `S(r)=${state.sigOut[i].toFixed(4)}  `+
+         `v=${state.finalV[i].toFixed(4)}\n`;
+  }
+  sig.textContent = `S(x) = 1/(1+exp(-k*(x-c)))   k=${state.kSig}  c=${state.cSig}\n\n`+s;
+  vec.textContent =
+    `Feature Vector V ∈ R^36\n`+
+    `V = (${state.finalV.map(x=>x.toFixed(4)).join(", ")})\n\n`+
+    `Vetor normalizado dos pesos (W/1000):\n`+
+    `(${state.weights.map(x=>(x/1000).toFixed(3)).join(", ")})`;
+}
+
+function renderAll(){
+  recomputeVector();
+  updateCoords();
+  updateStats();
+  drawRadar();
+  drawBars();
+  drawPolar();
+  drawHeat();
+  updateDebug();
+}
+
+/* ================================================================
+   SEÇÃO 8 — CONSTRUÇÃO DO GRID DE PESOS (sliders + inputs)
+   ================================================================ */
+function buildWeightsGrid(){
+  const grid = document.getElementById("weightsGrid");
+  grid.innerHTML = "";
+  for(let i=0;i<N_WEIGHTS;i++){
+    const div = document.createElement("div");
+    div.className = "weight";
+    div.innerHTML = `
+      <div class="wn">${WEIGHT_NAMES[i]}</div>
+      <input type="range" min="0" max="1000" step="1" value="${state.weights[i]}" data-i="${i}">
+      <input type="number" min="0" max="1000" step="1" value="${state.weights[i]}" data-i="${i}">
+    `;
+    grid.appendChild(div);
+  }
+  grid.addEventListener("input", (e)=>{
+    const t = e.target;
+    if(!t.dataset.i && t.dataset.i!=="0") return;
+    const i = parseInt(t.dataset.i,10);
+    let v = parseInt(t.value,10);
+    if(isNaN(v)) v=0;
+    v = Math.max(0, Math.min(1000, v));
+    state.weights[i] = v;
+    // sincroniza slider/number
+    const siblings = t.parentElement.querySelectorAll("input");
+    siblings.forEach(s=>{ if(s!==t) s.value = v; });
+    renderAll();
+  });
+}
+
+/* ================================================================
+   SEÇÃO 9 — EVENTOS DE CONTROLE
+   ================================================================ */
+function parseHex(s){
+  s = s.trim().replace(/^0x/i,"");
+  if(!/^[0-9a-fA-F]+$/.test(s)) return null;
+  return BigInt("0x"+s);
+}
+
+function doCalc(){
+  const v = parseHex(document.getElementById("kHex").value);
+  if(v===null || v<=0n || v>=N){
+    alert("Valor de k inválido. Deve ser inteiro em [1, N-1].");
+    return;
+  }
+  state.k = v;
+  state.Q = scalarMul(state.k, state.G);
+  renderAll();
+}
+
+document.getElementById("btnCalc").addEventListener("click", doCalc);
+document.getElementById("kHex").addEventListener("keydown", e=>{
+  if(e.key==="Enter") doCalc();
+});
+document.getElementById("btnRandom").addEventListener("click", ()=>{
+  // Gera k aleatório via crypto.getRandomValues (32 bytes)
+  const buf = new Uint8Array(32);
+  crypto.getRandomValues(buf);
+  let hex = "";
+  for(const b of buf) hex += b.toString(16).padStart(2,"0");
+  let k = BigInt("0x"+hex);
+  k = mod(k, N-1n) + 1n;   // garante 1 ≤ k < N
+  document.getElementById("kHex").value = fmtHex(k);
+  doCalc();
+});
+
+document.getElementById("btnResetW").addEventListener("click", ()=>{
+  state.weights.fill(100); buildWeightsGrid(); renderAll();
+});
+document.getElementById("btnRandW").addEventListener("click", ()=>{
+  for(let i=0;i<N_WEIGHTS;i++) state.weights[i] = Math.floor(Math.random()*1001);
+  buildWeightsGrid(); renderAll();
+});
+document.getElementById("btnUniform").addEventListener("click", ()=>{
+  state.weights.fill(500); buildWeightsGrid(); renderAll();
+});
+
+document.getElementById("kSlider").addEventListener("input", e=>{
+  state.kSig = parseFloat(e.target.value);
+  document.getElementById("kVal").textContent = state.kSig.toFixed(1);
+  renderAll();
+});
+document.getElementById("cSlider").addEventListener("input", e=>{
+  state.cSig = parseFloat(e.target.value);
+  document.getElementById("cVal").textContent = state.cSig.toFixed(2);
+  renderAll();
+});
+
+// Modos de magnitude
+const MODES = {
+  small:  {k:0.5,  c:0.5},
+  medium: {k:10,   c:0.5},
+  high:   {k:50,   c:0.5},
+  max:    {k:100,  c:0.5}
+};
+document.querySelectorAll(".mode-btns button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".mode-btns button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const m = MODES[btn.dataset.mode];
+    state.kSig = m.k; state.cSig = m.c;
+    document.getElementById("kSlider").value = m.k;
+    document.getElementById("cSlider").value = m.c;
+    document.getElementById("kVal").textContent = m.k.toFixed(1);
+    document.getElementById("cVal").textContent = m.c.toFixed(2);
+    renderAll();
+  });
+});
+
+// Tabs de debug
+document.querySelectorAll(".tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+// Redesenho responsivo
+let resizeTimer;
+window.addEventListener("resize", ()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderAll, 120);
+});
+
+/* ================================================================
+   SEÇÃO 10 — INICIALIZAÇÃO
+   ================================================================ */
+buildWeightsGrid();
+// Ponto inicial: k=1 → Q = G
+state.Q = [Gx, Gy];
+document.getElementById("kHex").value = fmtHex(1n);
+renderAll();
+</script>
+</body>
+</html>

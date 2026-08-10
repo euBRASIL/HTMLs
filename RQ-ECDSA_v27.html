@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Prédios - Resíduo Quadrático(Esfera 🛸)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #050510; touch-action: none; color: white; }
+        #game-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        
+        #crosshair {
+            position: fixed; top: 50%; left: 50%; width: 40px; height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none; transition: all 0.2s ease; z-index: 101;
+        }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.5); }
+        #crosshair::before { width: 2px; height: 10px; top: -15px; left: 50%; transform: translateX(-50%); }
+        #crosshair::after { width: 10px; height: 2px; left: -15px; top: 50%; transform: translateY(-50%); }
+
+        #joystick-container { position: fixed; bottom: 80px; left: 40px; width: 120px; height: 120px; pointer-events: auto; touch-action: none; }
+        #joystick-base { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; background: rgba(0, 255, 255, 0.1); border: 2px solid rgba(0, 255, 255, 0.4); border-radius: 50%; }
+        #joystick-stick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: linear-gradient(145deg, #00ffff, #0088ff); border-radius: 50%; box-shadow: 0 0 15px #00ffff; cursor: pointer; transition: transform 0.05s ease-out; }
+        #joystick-stick.active { transition: none; }
+        
+        #action-buttons { position: fixed; bottom: 80px; right: 40px; display: flex; flex-direction: column; gap: 20px; pointer-events: auto; }
+        .action-btn { width: 70px; height: 70px; border-radius: 50%; border: none; color: white; font-size: 14px; font-weight: bold; box-shadow: 0 0 15px rgba(0,0,0,0.5); cursor: pointer; transition: all 0.15s ease; }
+        .action-btn:active { transform: scale(0.92); }
+        .action-btn.enter { background: linear-gradient(145deg, #00d2d3, #01a3a4); }
+        .action-btn.scan { background: linear-gradient(145deg, #00ff88, #00b359); color: #000; box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
+
+        .panel { background: rgba(5, 5, 16, 0.85); color: white; padding: 15px; border-radius: 8px; backdrop-filter: blur(10px); pointer-events: auto; border: 1px solid rgba(0, 255, 255, 0.3); box-shadow: 0 0 15px rgba(0, 255, 255, 0.1); }
+        #info-panel { position: fixed; top: 0px; left: 0px; }
+        #info-panel h3 { margin-bottom: 8px; color: #00ffff; font-size: 16px; text-shadow: 0 0 5px #00ffff; }
+        #info-panel p { margin: 4px 0; font-size: 13px; opacity: 0.9; }
+        
+        #ecc-panel { position: fixed; top: 5px; right: 5px; text-align: right; }
+        #ecc-panel h3 { margin-bottom: 8px; color: #ff0055; font-size: 16px; text-shadow: 0 0 5px #ff0055; }
+        #ecc-panel p { margin: 4px 0; font-size: 13px; font-family: monospace; }
+        #ecc-status { color: #feca57; font-weight: bold; }
+
+        #coords-panel { 
+            position: fixed; 
+            bottom: 10px; 
+            left: 20px; 
+            max-width: 300px; 
+            min-width: 280px;
+        }
+        #coords-panel h3 { 
+            margin-bottom: 8px; 
+            color: #feca57; 
+            font-size: 14px; 
+            text-shadow: 0 0 5px #feca57; 
+        }
+        #coords-panel p { margin: 4px 0; font-size: 12px; }
+        #coords-counter { color: #feca57; font-weight: bold; }
+        #coords-display { 
+            font-family: monospace; 
+            font-size: 9px; 
+            word-break: break-all; 
+            color: #feca57; 
+            line-height: 1.6;
+        }
+        #coords-display.complete {
+            color: #00ff88;
+            text-shadow: 0 0 8px #00ff88;
+            font-weight: bold;
+        }
+        #btn-clear-coords { 
+            margin-top: 8px; 
+            padding: 5px 10px; 
+            background: #ff0055; 
+            color: white; 
+            border: none; 
+            border-radius: 3px; 
+            cursor: pointer; 
+            font-size: 10px;
+            font-weight: bold;
+            pointer-events: auto;
+            width: 50%;
+        }
+        #btn-clear-coords:hover { background: #ff3377; }
+
+        #minimap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 140px; height: 140px; background: rgba(5, 5, 16, 0.9); border: 2px solid #00ffff; border-radius: 50%; overflow: hidden; box-shadow: 0 0 20px rgba(0, 255, 255, 0.4); pointer-events: none; }
+        #minimap-canvas { width: 100%; height: 100%; }
+
+        /* =========================================
+           NOVO SCAN DRAWER VERTICAL
+           ========================================= */
+        #math-modal {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            display: flex; justify-content: flex-end; align-items: stretch;
+            background: rgba(0, 0, 0, 0.18);
+            z-index: 200;
+            opacity: 1; visibility: visible; pointer-events: auto;
+            transition: opacity 0.28s ease, visibility 0.28s ease;
+            touch-action: pan-y;
+        }
+
+        #math-modal.hidden {
+            opacity: 0; visibility: hidden; pointer-events: none;
+        }
+
+        #modal-box.modal-content {
+            position: relative;
+            width: min(520px, 92vw); height: 100vh; max-height: 100vh;
+            margin: 0; border: 0; border-left: 2px solid #00ffff;
+            border-radius: 18px 0 0 18px;
+            background: linear-gradient(135deg, rgba(5,5,16,0.98) 0%, rgba(10,15,30,0.98) 100%);
+            box-shadow: -5px 0 25px rgba(0, 255, 255, 0.15);
+            
+            overflow-y: auto; overflow-x: hidden;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin; scrollbar-color: #00ffff #050510;
+            
+            transform: translate3d(0, 0, 0);
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform;
+            touch-action: pan-y;
+        }
+
+        #math-modal.hidden #modal-box.modal-content {
+            transform: translate3d(105%, 0, 0);
+        }
+
+        .modal-content.invalid { border-left-color: #ff0055 !important; box-shadow: -5px 0 25px rgba(255, 0, 85, 0.15) !important; }
+
+        #scan-drag-bar {
+            position: absolute; left: 6px; top: 50%;
+            width: 8px; height: 110px;
+            transform: translateY(-50%);
+            border-radius: 10px;
+            background: linear-gradient(180deg, #00ffff, #00ff88, #00ffff);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+            cursor: grab; touch-action: none;
+            z-index: 20;
+            transition: height 0.2s ease, background 0.2s ease;
+        }
+        #scan-drag-bar:active, #scan-drag-bar.dragging {
+            cursor: grabbing; height: 145px;
+            background: linear-gradient(180deg, #fff, #00ffff, #fff);
+        }
+
+        .scan-header {
+            position: sticky; top: -22px; z-index: 10;
+            padding: 25px 20px 15px 30px;
+            background: linear-gradient(180deg, rgba(7,12,25,1) 0%, rgba(7,12,25,0.92) 70%, rgba(7,12,25,0) 100%);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+        #modal-title { font-size: 1.2rem; color: #00ffff; text-shadow: 0 0 5px #00ffff; letter-spacing: 1px; }
+        
+        .scan-header-status { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
+        #scan-panel-status { color: #aaa; }
+        .scan-live { 
+            color: #00ff88; font-weight: bold; display: flex; align-items: center; gap: 4px; 
+        }
+        .scan-live::before {
+            content: ''; display: block; width: 6px; height: 6px;
+            background: #00ff88; border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+
+        .scan-body { padding: 10px 20px 100px 30px; }
+
+        /* Estilos Matemáticos Preservados */
+        .math-row { margin: 12px 0; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #333; padding-bottom: 8px; font-size: 14px; gap: 10px; }
+        .math-row span { color: #aaa; flex-shrink: 0; }
+        .math-row code { color: #00ff88; font-family: monospace; word-break: break-all; text-align: right; max-width: 65%; }
+        .math-row.full {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .math-row.full .label-77 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .number-77 {
+            background: linear-gradient(135deg, rgba(254, 202, 87, 0.15), rgba(0, 255, 136, 0.1));
+            border: 2px solid #feca57;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #feca57;
+            word-break: break-all;
+            line-height: 1.6;
+            text-shadow: 0 0 5px rgba(254, 202, 87, 0.6);
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+        .number-77 strong {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        .field-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(255, 0, 85, 0.1), rgba(0, 255, 255, 0.1));
+            border: 2px solid #ff0055;
+            border-radius: 10px;
+        }
+        .field-section h4 {
+            color: #ff0055;
+            margin-bottom: 12px;
+            text-shadow: 0 0 8px #ff0055;
+            font-size: 14px;
+        }
+        .field-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin: 8px 0;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+        }
+        .field-row:last-child { border-bottom: none; }
+        .field-row .label { color: #aaa; flex-shrink: 0; margin-right: 10px; }
+        .field-row .value { 
+            font-family: 'Courier New', monospace; 
+            word-break: break-all; 
+            text-align: right; 
+            color: #00ff88;
+        }
+        .field-row .value.highlight {
+            color: #feca57;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .percent-bar {
+            margin-top: 12px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #ff0055;
+        }
+        .percent-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0055, #feca57, #00ff88);
+            border-radius: 10px;
+            transition: width 1s ease-out;
+            box-shadow: 0 0 10px rgba(254, 202, 87, 0.8);
+        }
+        .percent-label {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #feca57;
+            text-shadow: 0 0 10px #feca57;
+        }
+        
+        .copy-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: #feca57;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 11px;
+            align-self: center;
+        }
+        .copy-btn:active { transform: scale(0.95); }
+        #modal-close {
+            position: sticky; bottom: 0; width: calc(100% + 40px); margin-left: -30px;
+            padding: 18px; background: linear-gradient(0deg, rgba(5,5,16,1) 60%, rgba(5,5,16,0) 100%);
+            color: #ff0055; border: none; font-weight: bold; font-size: 1rem;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 2px;
+            touch-action: manipulation; z-index: 15;
+        }
+        #modal-close:active { color: #fff; text-shadow: 0 0 10px #ff0055; }
+
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; transition: opacity 0.5s ease; }
+        #loading-screen.hidden { opacity: 0; pointer-events: none; }
+        #loading-screen h1 { color: #00ffff; font-size: 32px; margin-bottom: 20px; text-shadow: 0 0 20px #00ffff; letter-spacing: 2px; }
+        #loading-bar { width: 300px; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; border: 1px solid #00ffff; }
+        #loading-progress { width: 0%; height: 100%; background: linear-gradient(90deg, #00ffff, #00ff88); box-shadow: 0 0 10px #00ffff; transition: width 0.3s ease; }
+        #loading-text { color: #aaa; margin-top: 15px; font-size: 14px; font-family: monospace; }
+
+        @media (max-width: 768px) {
+            #joystick-container { bottom: 100px; left: 20px; width: 100px; height: 100px; }
+            #joystick-base { width: 100px; height: 100px; }
+            #joystick-stick { width: 40px; height: 40px; }
+            #action-buttons { bottom: 100px; right: 20px; }
+            .action-btn { width: 60px; height: 60px; font-size: 12px; }
+            #info-panel, #ecc-panel { padding: 10px; font-size: 12px; }
+            #info-panel h3, #ecc-panel h3 { font-size: 14px; }
+            #minimap { width: 100px; height: 100px; bottom: 10px; }
+            #coords-panel { bottom: 130px; left: 10px; right: 10px; max-width: none; padding: 10px; }
+            #coords-display { font-size: 10px; }
+            .number-77 { font-size: 11px; padding: 8px; }
+            #modal-box.modal-content { width: min(94vw, 460px); }
+            #scan-drag-bar { width: 7px; height: 95px; left: 4px; }
+            .scan-body { padding-left: 25px; padding-right: 15px; }
+            #modal-title { font-size: 1rem; }
+            .field-row { flex-direction: column; }
+            .field-row .value { text-align: left; margin-top: 4px; }
+        }
+
+        #modal-box.modal-content::-webkit-scrollbar { width: 4px; }
+        #modal-box.modal-content::-webkit-scrollbar-track { background: #050510; }
+        #modal-box.modal-content::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <div id="ui-layer">
+        <div id="crosshair"></div>
+
+        <div id="joystick-container">
+            <div id="joystick-base"></div>
+            <div id="joystick-stick"></div>
+        </div>
+        
+        <div id="action-buttons">
+            <button class="action-btn enter" id="btn-enter">ESFERA</button>
+            <button class="action-btn scan" id="btn-scan">SCAN</button>
+        </div>
+
+
+<div id="info-panel" class="panel">
+    <!--h3>🌍 MAPA MUNDI</h3-->
+  
+    
+    <!--h3 style="margin-top: 12px;">📍</h3-->
+    <p style="font-size: 11px; margin-bottom: 8px;">Coletadas: <span id="coords-counter">0/11</span></p>
+    <p id="coords-display">-</p>
+    <button id="btn-clear-coords">LIMPAR</button>
+</div>
+
+  <div id="ecc-panel" class="panel">
+<p style="font-size: 10px; color: #aaa; margin-top: 5px;">🔐 Y² ≡ X³ + 7 (mod p)</p>
+
+<p>Grid: <span id="grid-text">0, 0</span>
+</p>
+  <p>País: <span id="country-text">Carregando...</span></p>
+    
+    
+            <p>Prédios: <span id="valid-count" style="color:#00ff88">0</span></p>
+
+<p>Cidade: <span id="city-text">...</span></p>
+            <p>Terrenos 🚫: <span id="invalid-count" style="color:#ff0055">0</span></p>
+
+            <p>Worker: <span id="ecc-status">Idle</span></p>
+        </div>
+
+        
+
+
+
+
+
+      
+      
+
+
+        
+        <div id="minimap">
+            <canvas id="minimap-canvas"></canvas>
+        </div>
+    </div>
+    
+    <!-- =========================================
+         NOVO SCAN DRAWER STRUCTURE
+         ========================================= -->
+    <div id="math-modal" class="hidden">
+        <div id="modal-box" class="modal-content">
+            <!-- Barra de Arraste Interativa -->
+            <div id="scan-drag-bar" role="slider" tabindex="0" aria-label="Arrastar painel SCAN"></div>
+
+            <!-- Header Sticky -->
+            <div class="scan-header">
+                <div id="modal-title">🔍 ANÁLISE DO NÓ</div>
+                <div class="scan-header-status">
+                    <span id="scan-panel-status">SCAN MATEMÁTICO</span>
+                    <span class="scan-live">ONLINE</span>
+                </div>
+            </div>
+
+            <!-- Corpo com Conteúdo Matemático Preservado -->
+            <div class="scan-body">
+                <div class="math-row"><span>Coordenada X:</span> <code id="modal-x"></code></div>
+                <div class="math-row"><span>Equação:</span> <span>Y² ≡ X³ + 7 (mod p)</span></div>
+                <div class="math-row"><span>Raiz Y (Hex):</span> <code id="modal-y"></code></div>
+                <div class="math-row"><span>Legendre:</span> <span id="modal-legendre"></span></div>
+                <div class="math-row"><span>Status:</span> <span id="modal-status"></span></div>
+                
+                <div class="math-row full" id="number77-row" style="display:none;">
+                    <div class="label-77">
+                        <span>🔑 NÚMERO DECIMAL COLETADO (77 casas):</span>
+                    </div>
+                    <div class="number-77" id="number-77"></div>
+                    <button class="copy-btn" id="btn-copy-77">📋 COPIAR NÚMERO DECIMAL</button>
+                </div>
+                
+                <div class="field-section" id="field-section" style="display:none;">
+                    <h4>📊 ANÁLISE DO CAMPO FINITO ECDSA-SECP256k1</h4>
+                    
+                    <div class="field-row">
+                        <span class="label">Valor Máximo (n = 2²⁵⁶ - 1):</span>
+                        <span class="value" id="field-max-value"></span>
+                    </div>
+                    
+                    <div class="field-row">
+                        <span class="label">Percentual ECDSA:</span>
+                        <span class="value" id="field-decimal-value"></span>
+                    </div>
+                    
+                    <div class="field-row">
+                        <span class="label">Valor Inteiro Equivalente:</span>
+                        <span class="value" id="field-integer-value"></span>
+                    </div>
+                    
+                    <div class="field-row">
+                        <span class="label">Percentual do Campo Finito:</span>
+                        <span class="value highlight" id="field-percent-value"></span>
+                    </div>
+                    
+                    <div class="percent-bar">
+                        <div class="percent-fill" id="percent-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="percent-label" id="percent-label">0%</div>
+                    
+                    <button class="copy-btn" id="btn-copy-field" style="width: 100%; margin-top: 15px;">📋 COPIAR ANÁLISE COMPLETA</button>
+                </div>
+
+                <!-- Botão Fechar Sticky -->
+                <button id="modal-close">FECHAR SCANNER</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-screen">
+        <h1>AR ELLIPTIC WORLD</h1>
+        <div id="loading-bar"><div id="loading-progress"></div></div>
+        <div id="loading-text">Inicializando Campo Finito Fp...</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ==========================================
+        // 1. WEB WORKER PARA MATEMÁTICA SECP256k1
+        // ==========================================
+        const workerScript = `
+            const P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn;
+            const P_PLUS_1_DIV_4 = (P + 1n) / 4n;
+
+            function modPow(base, exp, mod) {
+                let res = 1n;
+                base = base % mod;
+                while (exp > 0n) {
+                    if (exp % 2n === 1n) res = (res * base) % mod;
+                    exp = exp / 2n;
+                    base = (base * base) % mod;
+                }
+                return res;
+            }
+
+            self.onmessage = function(e) {
+                const { id, cx, cz, houses } = e.data;
+                const results = [];
+                for (let i = 0; i < houses.length; i++) {
+                    const mathX = BigInt(houses[i].mathX);
+                    const rhs = (modPow(mathX, 3n, P) + 7n) % P;
+                    const y = modPow(rhs, P_PLUS_1_DIV_4, P);
+                    const isValid = (y * y) % P === rhs;
+                    
+                    const heightFactor = 0.2 + (Number(mathX & 255n) / 255) * 0.8; 
+                    
+                    results.push({
+                        index: houses[i].index,
+                        isValid: isValid,
+                        heightFactor: heightFactor,
+                        mathX: houses[i].mathX,
+                        x3d: houses[i].x3d,
+                        z3d: houses[i].z3d,
+                        yHex: isValid ? '0x' + y.toString(16).substring(0, 24).toUpperCase() + '...' : 'N/A (Não Resíduo)',
+                        legendre: isValid ? 1 : -1
+                    });
+                }
+                self.postMessage({ id, cx, cz, results });
+            };
+        `;
+        const blob = new Blob([workerScript], { type: 'application/javascript' });
+        const eccWorker = new Worker(URL.createObjectURL(blob));
+
+        // ==========================================
+        // 2. ESTADO DO JOGO E VARIÁVEIS GLOBAIS
+        // ==========================================
+        const gameState = {
+            mode: 'walking', speed: 0, maxSpeed: 150, acceleration: 3.9,
+            deceleration: 0.9, turnSpeed: 0.19, playerInCar: false, loading: true
+        };
+
+        let scene, camera, renderer;
+        let player, car;
+        let sphereShell, sphereRing, sphereCore, sphereGlow;
+        let validMesh, invalidMesh;
+        let joystickData = { x: 0, y: 0, active: false };
+        let keys = {};
+        
+        const CELL_SIZE = 25;
+        const GRID_RADIUS = 10; 
+        let currentCellX = null, currentCellZ = null;
+        
+        let validData = [];
+        let invalidData = [];
+        
+        let isComputing = false;
+        let targetedData = null;
+        let targetedType = null;
+        let lastScanData = null;
+        
+        const raycaster = new THREE.Raycaster();
+        const center = new THREE.Vector2(0, 0);
+        const dummy = new THREE.Object3D();
+        const MAX_HOUSES = 2048;
+
+        const countries = ["Brasil", "Japão", "EUA", "Alemanha", "Índia", "Nigéria", "Egito", "Austrália", "Canadá", "China"];
+        const cities = ["São Paulo", "Tóquio", "Nova Iorque", "Berlim", "Mumbai", "Lagos", "Cairo", "Sydney", "Toronto", "Xangai", "Rio", "Osaka", "Chicago", "Munique"];
+
+        const FIELD_MAX_VALUE = BigInt("115792089237316195423570985008687907853269984665640564039457584007908834671663");
+
+        // ==========================================
+        // SISTEMA DE COLETA DE COORDENADAS
+        // ==========================================
+        const collectedCoords = {
+            numbers: [],
+            maxCapacity: 11,
+            visitedBuildings: new Set(),
+            
+            addCoordinate(number) {
+                if (this.numbers.length < this.maxCapacity && !this.visitedBuildings.has(number)) {
+                    this.numbers.push(number);
+                    this.visitedBuildings.add(number);
+                    this.saveToLocalStorage();
+                    return true;
+                }
+                return false;
+            },
+            
+            saveToLocalStorage() {
+                try {
+                    localStorage.setItem('collectedCoords', JSON.stringify(this.numbers));
+                } catch (e) {
+                    console.warn('LocalStorage indisponível ou cheio.');
+                }
+            },
+            
+            loadFromLocalStorage() {
+                try {
+                    const saved = localStorage.getItem('collectedCoords');
+                    if (saved) {
+                        this.numbers = JSON.parse(saved);
+                        this.numbers.forEach(n => this.visitedBuildings.add(n));
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar do LocalStorage.');
+                }
+            },
+            
+            getFormattedOutput() {
+                if (this.numbers.length === 0) return '-';
+                return this.numbers.join(' | ');
+            },
+            
+            getFullNumber77() {
+                if (this.numbers.length < this.maxCapacity) return null;
+                const concatenated = this.numbers
+                    .map(num => {
+                        const str = String(num);
+                        const parts = str.split('.');
+                        if (parts.length > 1) {
+                            return parts[1].padEnd(7, '0').substring(0, 7);
+                        }
+                        return '0000000';
+                    })
+                    .join('');
+                return concatenated.length === 77 ? concatenated : null;
+            },
+            
+            isComplete() {
+                return this.numbers.length >= this.maxCapacity;
+            },
+            
+            clear() {
+                this.numbers = [];
+                this.visitedBuildings.clear();
+                try {
+                    localStorage.removeItem('collectedCoords');
+                } catch (e) {}
+            }
+        };
+
+        // ==========================================
+        // FUNÇÕES DE CÁLCULO DO CAMPO FINITO
+        // ==========================================
+        function calculateFieldPercentage(decimalNumber77) {
+            if (!decimalNumber77 || decimalNumber77.length !== 77) {
+                return null;
+            }
+            
+            const numerator = BigInt(decimalNumber77);
+            const denominator = BigInt(10) ** BigInt(77);
+            const integerValue = (numerator * FIELD_MAX_VALUE) / denominator;
+            const percentBigInt = (numerator * BigInt(10000000000)) / denominator;
+            const percentValue = Number(percentBigInt) / 100000000;
+            
+            return {
+                decimalNumber: decimalNumber77,
+                integerValue: integerValue,
+                percent: percentValue,
+                percentFormatted: percentValue.toFixed(8) + '%',
+                integerValueHex: '0x' + integerValue.toString(16).toUpperCase(),
+                integerValueStr: integerValue.toString()
+            };
+        }
+
+        function formatBigIntWithDots(bigint) {
+            return bigint.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        // ==========================================
+        // 3. INICIALIZAÇÃO THREE.JS
+        // ==========================================
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050510);
+            scene.fog = new THREE.FogExp2(0x050510, 0.012);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 15);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('game-container').appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x444466, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(50, 100, 50);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            createGround();
+            createPlayer();
+            createAlienSphere();
+            initEllipticWorld();
+            
+            collectedCoords.loadFromLocalStorage();
+            updateCoordsDisplay();
+            
+            setupControls();
+            simulateLoading();
+            animate();
+        }
+
+        function createGround() {
+            const groundGeo = new THREE.PlaneGeometry(2000, 2000);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x080812, roughness: 0.9, metalness: 0.1 });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const gridHelper = new THREE.GridHelper(2000, 80, 0x003344, 0x001122);
+            gridHelper.position.y = 0.05;
+            gridHelper.material.opacity = 0.5;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+        }
+
+        function createInvalidTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#1a0505';
+            ctx.fillRect(0, 0, 128, 128);
+            ctx.strokeStyle = '#ff0033';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(6, 6, 116, 116);
+            ctx.beginPath();
+            ctx.moveTo(24, 24); ctx.lineTo(104, 104);
+            ctx.moveTo(104, 24); ctx.lineTo(24, 104);
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = 'rgba(255, 0, 50, 0.7)';
+            ctx.stroke();
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function initEllipticWorld() {
+            const validGeo = new THREE.BoxGeometry(10, 1, 10); 
+            const validMat = new THREE.MeshStandardMaterial({ 
+                color: 0x00ff88, emissive: 0x00ff88, emissiveIntensity: 0.4, roughness: 0.2, metalness: 0.8 
+            });
+            validMesh = new THREE.InstancedMesh(validGeo, validMat, MAX_HOUSES);
+            validMesh.count = 0;
+            scene.add(validMesh);
+
+            const invalidTex = createInvalidTexture();
+            const invalidGeo = new THREE.PlaneGeometry(14, 14);
+            const invalidMat = new THREE.MeshStandardMaterial({ 
+                map: invalidTex, transparent: true, roughness: 0.8, emissive: 0xff0000, emissiveIntensity: 0.3 
+            });
+            invalidMesh = new THREE.InstancedMesh(invalidGeo, invalidMat, MAX_HOUSES);
+            invalidMesh.count = 0;
+            scene.add(invalidMesh);
+        }
+
+        function createPlayer() {
+            player = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.6, 16), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 0.5 }));
+            body.position.y = 0.8; body.castShadow = true; player.add(body);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.2 }));
+            head.position.y = 1.8; head.castShadow = true; player.add(head);
+            player.position.set(10, 0, 10);
+            scene.add(player);
+        }
+
+        function createAlienSphere() {
+            car = new THREE.Group();
+            car.position.set(0, 0, 0);
+
+            const shellGeo = new THREE.SphereGeometry(2.5, 48, 48);
+            const shellMat = new THREE.MeshStandardMaterial({
+                color: 0x88ffff,
+                transparent: true,
+                opacity: 0.25,
+                roughness: 0.05,
+                metalness: 0.9,
+                emissive: 0x00ffff,
+                emissiveIntensity: 0.3,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            sphereShell = new THREE.Mesh(shellGeo, shellMat);
+            sphereShell.position.y = 2.5;
+            car.add(sphereShell);
+
+            const ringGeo = new THREE.TorusGeometry(3.2, 0.08, 16, 64);
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: 0x00ffff,
+                emissive: 0x00ffff,
+                emissiveIntensity: 1.2,
+                roughness: 0.1,
+                metalness: 1.0
+            });
+            sphereRing = new THREE.Mesh(ringGeo, ringMat);
+            sphereRing.position.y = 2.5;
+            sphereRing.rotation.x = Math.PI / 2;
+            car.add(sphereRing);
+
+            const ring2Geo = new THREE.TorusGeometry(3.6, 0.05, 16, 64);
+            const ring2Mat = new THREE.MeshStandardMaterial({
+                color: 0xff00aa,
+                emissive: 0xff00aa,
+                emissiveIntensity: 0.8,
+                roughness: 0.1,
+                metalness: 1.0
+            });
+            const sphereRing2 = new THREE.Mesh(ring2Geo, ring2Mat);
+            sphereRing2.position.y = 2.5;
+            sphereRing2.rotation.x = Math.PI / 2;
+            sphereRing2.rotation.z = Math.PI / 4;
+            car.add(sphereRing2);
+            car.userData.ring2 = sphereRing2;
+
+            const coreGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.6
+            });
+            sphereCore = new THREE.Mesh(coreGeo, coreMat);
+            sphereCore.position.y = 2.5;
+            car.add(sphereCore);
+
+            const glowCanvas = document.createElement('canvas');
+            glowCanvas.width = 128; glowCanvas.height = 128;
+            const gCtx = glowCanvas.getContext('2d');
+            const gradient = gCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, 'rgba(0, 255, 255, 0.6)');
+            gradient.addColorStop(0.4, 'rgba(0, 255, 255, 0.2)');
+            gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
+            gCtx.fillStyle = gradient;
+            gCtx.fillRect(0, 0, 128, 128);
+            
+            const glowTexture = new THREE.CanvasTexture(glowCanvas);
+            const glowMat = new THREE.SpriteMaterial({
+                map: glowTexture,
+                color: 0x00ffff,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            sphereGlow = new THREE.Sprite(glowMat);
+            sphereGlow.scale.set(10, 10, 1);
+            sphereGlow.position.y = 2.5;
+            car.add(sphereGlow);
+
+            const pilotLight = new THREE.PointLight(0x00ffff, 1.5, 8);
+            pilotLight.position.y = 2.5;
+            car.add(pilotLight);
+            car.userData.pilotLight = pilotLight;
+
+            scene.add(car);
+        }
+
+        // ==========================================
+        // 4. LÓGICA DO MUNDO ELÍPTICO
+        // ==========================================
+        function getMathX(cx, cz) {
+            let h1 = BigInt(Math.abs(cx * 374761393 + cz * 668265263));
+            let h2 = BigInt(Math.abs(cx * 1274126177 + cz * 31));
+            let x256 = (h1 << 128n) ^ (h2 << 64n) ^ h1;
+            const P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn;
+            return (x256 % P).toString();
+        }
+
+        function checkGridUpdate() {
+            const pos = gameState.mode === 'driving' ? car.position : player.position;
+            const cx = Math.round(pos.x / CELL_SIZE);
+            const cz = Math.round(pos.z / CELL_SIZE);
+            
+            if (cx !== currentCellX || cz !== currentCellZ) {
+                currentCellX = cx;
+                currentCellZ = cz;
+                requestGridGeneration(cx, cz);
+                updateRegionNames(cx, cz);
+                document.getElementById('grid-text').textContent = `${cx}, ${cz}`;
+            }
+        }
+
+        function requestGridGeneration(cx, cz) {
+            if (isComputing) return;
+            isComputing = true;
+            document.getElementById('ecc-status').textContent = 'CPU●';
+            document.getElementById('ecc-status').style.color = '#feca57';
+            
+            const housesToCompute = [];
+            let idx = 0;
+            for (let i = -GRID_RADIUS; i <= GRID_RADIUS; i++) {
+                for (let j = -GRID_RADIUS; j <= GRID_RADIUS; j++) {
+                    const cellX = cx + i;
+                    const cellZ = cz + j;
+                    housesToCompute.push({
+                        index: idx++,
+                        mathX: getMathX(cellX, cellZ),
+                        x3d: cellX * CELL_SIZE,
+                        z3d: cellZ * CELL_SIZE
+                    });
+                }
+            }
+            eccWorker.postMessage({ id: Date.now(), cx, cz, houses: housesToCompute });
+        }
+
+        eccWorker.onmessage = function(e) {
+            const { cx, cz, results } = e.data;
+            if (cx === currentCellX && cz === currentCellZ) {
+                validData = [];
+                invalidData = [];
+                
+                results.forEach(h => {
+                    if (h.isValid) validData.push(h);
+                    else invalidData.push(h);
+                });
+                
+                updateInstancedMeshes();
+                document.getElementById('ecc-status').textContent = 'Sincronizado';
+                document.getElementById('ecc-status').style.color = '#00ff88';
+                
+                document.getElementById('valid-count').textContent = validData.length;
+                document.getElementById('invalid-count').textContent = invalidData.length;
+            }
+            isComputing = false;
+        };
+
+        function updateInstancedMeshes() {
+            for (let i = 0; i < validData.length; i++) {
+                const h = validData[i];
+                const height = 5 + h.heightFactor * 35;
+                dummy.position.set(h.x3d, height / 2, h.z3d);
+                dummy.scale.set(1, height, 1);
+                dummy.rotation.set(0, 0, 0);
+                dummy.updateMatrix();
+                validMesh.setMatrixAt(i, dummy.matrix);
+            }
+            validMesh.count = validData.length;
+            validMesh.instanceMatrix.needsUpdate = true;
+
+            for (let i = 0; i < invalidData.length; i++) {
+                const h = invalidData[i];
+                dummy.position.set(h.x3d, 0.1, h.z3d);
+                dummy.scale.set(1, 1, 1);
+                dummy.rotation.set(-Math.PI / 2, 0, 0);
+                dummy.updateMatrix();
+                invalidMesh.setMatrixAt(i, dummy.matrix);
+            }
+            invalidMesh.count = invalidData.length;
+            invalidMesh.instanceMatrix.needsUpdate = true;
+        }
+
+        function updateRegionNames(cx, cz) {
+            const hash = Math.abs(cx * 31 + cz * 17);
+            document.getElementById('country-text').textContent = countries[hash % countries.length];
+            document.getElementById('city-text').textContent = cities[(hash * 7) % cities.length];
+        }
+
+        // ==========================================
+        // FUNÇÕES DE COLETA DE COORDENADAS
+        // ==========================================
+        function generateDecimalNumber(x3d, z3d, mathX) {
+            const combined = Math.abs(x3d * 37.4761393 + z3d * 66.8265263);
+            const mathValue = Number(mathX.toString().substring(0, 8)) / 10000000;
+            let decimal = (combined * 0.0000001 + mathValue) % 1;
+            let str = decimal.toFixed(7);
+            
+            if (!str.includes('.')) {
+                str = '0.' + str.padEnd(7, '0');
+            } else {
+                const parts = str.split('.');
+                str = parts[0] + '.' + parts[1].padEnd(7, '0').substring(0, 7);
+            }
+            return str;
+        }
+
+        function checkProximity(playerPos, buildingX, buildingZ) {
+            const dx = playerPos.x - buildingX;
+            const dz = playerPos.z - buildingZ;
+            return Math.sqrt(dx * dx + dz * dz) < 6;
+        }
+
+        function updateCoordsDisplay() {
+            const display = document.getElementById('coords-display');
+            if (display) {
+                display.textContent = collectedCoords.getFormattedOutput();
+                if (collectedCoords.isComplete()) {
+                    display.classList.add('complete');
+                } else {
+                    display.classList.remove('complete');
+                }
+            }
+            const counter = document.getElementById('coords-counter');
+            if (counter) {
+                counter.textContent = `${collectedCoords.numbers.length}/${collectedCoords.maxCapacity}`;
+            }
+        }
+
+        // ==========================================
+        // 5. INTERAÇÃO E RAYCASTER
+        // ==========================================
+        function updateRaycaster() {
+            raycaster.setFromCamera(center, camera);
+            const intersects = raycaster.intersectObjects([validMesh, invalidMesh]);
+            
+            if (intersects.length > 0 && intersects[0].instanceId !== undefined) {
+                const hit = intersects[0];
+                if (hit.object === validMesh && hit.instanceId < validData.length) {
+                    targetedData = validData[hit.instanceId];
+                    targetedType = 'valid';
+                    document.getElementById('crosshair').style.borderColor = '#00ff88';
+                    document.getElementById('crosshair').style.boxShadow = `0 0 15px #00ff88`;
+                    return;
+                } 
+                else if (hit.object === invalidMesh && hit.instanceId < invalidData.length) {
+                    targetedData = invalidData[hit.instanceId];
+                    targetedType = 'invalid';
+                    document.getElementById('crosshair').style.borderColor = '#ff0055';
+                    document.getElementById('crosshair').style.boxShadow = `0 0 15px #ff0055`;
+                    return;
+                }
+            }
+            targetedData = null;
+            targetedType = null;
+            document.getElementById('crosshair').style.borderColor = 'rgba(255,255,255,0.5)';
+            document.getElementById('crosshair').style.boxShadow = 'none';
+        }
+
+        let activeNotification = null;
+        function showNotification(message, color) {
+            if (activeNotification) {
+                activeNotification.remove();
+            }
+            const notif = document.createElement('div');
+            notif.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(5, 5, 16, 0.95);
+                border: 2px solid ${color};
+                color: ${color};
+                padding: 20px 30px;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 16px;
+                z-index: 300;
+                pointer-events: none;
+                text-align: center;
+                box-shadow: 0 0 30px ${color};
+                text-shadow: 0 0 10px ${color};
+                animation: notifFade 3s ease-out forwards;
+            `;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            activeNotification = notif;
+            
+            if (!document.getElementById('notif-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notif-styles';
+                style.textContent = `
+                    @keyframes notifFade {
+                        0% { opacity: 0; transform: translate(-50%, -60%) scale(0.8); }
+                        10% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                        80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                        100% { opacity: 0; transform: translate(-50%, -40%) scale(0.9); pointer-events: none; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            setTimeout(() => {
+                if (activeNotification === notif) {
+                    notif.remove();
+                    activeNotification = null;
+                }
+            }, 3000);
+        }
+
+        function scanHouse() {
+            if (!targetedData) {
+                showNotification('⚠️ Mire em um prédio ou terreno para escanear!', '#feca57');
+                return;
+            }
+
+            const modalBox = document.getElementById('modal-box');
+            const title = document.getElementById('modal-title');
+            
+            if (targetedType === 'valid') {
+                modalBox.classList.remove('invalid');
+                title.textContent = '🏢 PRÉDIO (Resíduo Quadrático)';
+                title.style.color = '#00ff88';
+            } else {
+                modalBox.classList.add('invalid');
+                title.textContent = '🚫 TERRENO CANCELADO (Não Resíduo)';
+                title.style.color = '#ff0055';
+            }
+
+            // ABRE O DRAWER AUTOMATICAMENTE AO ESCANEAR
+            window.scanDrawer.open();
+            
+            document.getElementById('modal-x').textContent = '0x' + BigInt(targetedData.mathX).toString(16).toUpperCase();
+            document.getElementById('modal-y').textContent = targetedData.yHex;
+            
+            const leg = document.getElementById('modal-legendre');
+            leg.textContent = targetedData.legendre === 1 ? 'Resíduo Quadrático' : '-1 (Não Resíduo)';
+            leg.style.color = targetedData.isValid ? '#00ff88' : '#ff0055';
+            
+            const stat = document.getElementById('modal-status');
+            stat.textContent = targetedData.isValid ? 'Ponto Curva SECP256k1' : 'Y não existe em Fp.';
+            stat.style.color = targetedData.isValid ? '#00ff88' : '#ff0055';
+            
+            const number77Row = document.getElementById('number77-row');
+            const number77El = document.getElementById('number-77');
+            const fieldSection = document.getElementById('field-section');
+            
+            if (collectedCoords.isComplete() && targetedType === 'valid') {
+                const full77 = collectedCoords.getFullNumber77();
+                
+                if (!full77 || full77.length !== 77) {
+                    showNotification('⚠️ Erro ao gerar número de 77 casas. Tente limpar e coletar novamente.', '#ff0055');
+                    number77Row.style.display = 'none';
+                    fieldSection.style.display = 'none';
+                    return;
+                }
+
+                lastScanData = {
+                    full77: full77,
+                    fieldAnalysis: calculateFieldPercentage(full77)
+                };
+                
+                const formatted = full77.match(/.{1,7}/g).join(' ');
+                number77El.innerHTML = `<strong>0.</strong>${formatted}`;
+                number77Row.style.display = 'flex';
+                
+                if (lastScanData.fieldAnalysis) {
+                    document.getElementById('field-max-value').textContent = formatBigIntWithDots(FIELD_MAX_VALUE);
+                    document.getElementById('field-decimal-value').textContent = '0.' + full77.substring(0, 15) + '...';
+                    document.getElementById('field-integer-value').textContent = formatBigIntWithDots(lastScanData.fieldAnalysis.integerValue);
+                    document.getElementById('field-percent-value').textContent = lastScanData.fieldAnalysis.percentFormatted;
+                    document.getElementById('percent-label').textContent = lastScanData.fieldAnalysis.percentFormatted;
+                    
+                    const percentFill = document.getElementById('percent-fill');
+                    percentFill.style.width = '0%';
+                    setTimeout(() => {
+                        percentFill.style.width = Math.min(lastScanData.fieldAnalysis.percent, 100) + '%';
+                    }, 100);
+                    
+                    fieldSection.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        collectedCoords.clear();
+                        updateCoordsDisplay();
+                        console.log('🔄 Lista de coordenadas zerada após cálculo do campo finito.');
+                    }, 1500);
+                }
+            } else {
+                number77Row.style.display = 'none';
+                fieldSection.style.display = 'none';
+                lastScanData = null;
+                
+                if (targetedType === 'valid' && !collectedCoords.isComplete()) {
+                    showNotification(`📍 Escaneado! Continue coletando (${collectedCoords.numbers.length}/11)`, '#00ffff');
+                }
+            }
+        }
+
+        // ==========================================
+        // NOVO SISTEMA: SCAN DRAWER CONTROLLER
+        // ==========================================
+        window.scanDrawer = (() => {
+            const modal = document.getElementById('math-modal');
+            const panel = document.getElementById('modal-box');
+            const dragBar = document.getElementById('scan-drag-bar');
+            const statusText = document.getElementById('scan-panel-status');
+            const closeBtn = document.getElementById('modal-close');
+            
+            const ptr = { active: false, id: null, startX: 0, startY: 0, currX: 0, currY: 0, isDragging: false };
+            
+            const THRESHOLD_OPEN = 80;
+            const THRESHOLD_CLOSE = 100;
+            let isOpen = false;
+
+            const open = () => {
+                if (isOpen) return;
+                modal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    panel.style.transform = 'translate3d(0,0,0)';
+                });
+                isOpen = true;
+                statusText.textContent = "ANALISANDO DADOS...";
+                setTimeout(() => statusText.textContent = "SCAN MATEMÁTICO", 800);
+            };
+
+            const close = () => {
+                if (!isOpen) return;
+                panel.style.transform = 'translate3d(105%,0,0)';
+                setTimeout(() => {
+                    if (!isOpen) modal.classList.add('hidden');
+                }, 280);
+                isOpen = false;
+                statusText.textContent = "OFFLINE";
+            };
+
+            const toggle = () => isOpen ? close() : open();
+
+            const onPointerDown = (e) => {
+                const isDragBar = e.target === dragBar;
+                const isBackdrop = e.target === modal;
+                
+                if (!isDragBar && !isBackdrop) return;
+
+                if (isBackdrop && isOpen) {
+                    close();
+                    return;
+                }
+
+                ptr.active = true;
+                ptr.id = e.pointerId;
+                ptr.startX = e.clientX;
+                ptr.startY = e.clientY;
+                ptr.currX = e.clientX;
+                ptr.currY = e.clientY;
+                ptr.isDragging = false;
+
+                dragBar.setPointerCapture(e.pointerId);
+                dragBar.classList.add('dragging');
+            };
+
+            const onPointerMove = (e) => {
+                if (!ptr.active || e.pointerId !== ptr.id) return;
+                
+                ptr.currX = e.clientX;
+                ptr.currY = e.clientY;
+                const dx = ptr.currX - ptr.startX;
+                const dy = ptr.currY - ptr.startY;
+
+                if (!ptr.isDragging && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+                    ptr.isDragging = true;
+                    panel.style.transition = 'none';
+                }
+
+                if (ptr.isDragging) {
+                    e.preventDefault();
+                    const baseTranslate = isOpen ? 0 : panel.offsetWidth;
+                    let newX = baseTranslate + dx;
+                    
+                    if (isOpen) newX = Math.min(0, Math.max(-panel.offsetWidth, newX));
+                    else newX = Math.max(0, Math.min(panel.offsetWidth, newX));
+
+                    panel.style.transform = `translate3d(${newX}px, 0, 0)`;
+                }
+            };
+
+            const onPointerUp = (e) => {
+                if (!ptr.active || e.pointerId !== ptr.id) return;
+                
+                dragBar.releasePointerCapture(ptr.id);
+                dragBar.classList.remove('dragging');
+                panel.style.transition = '';
+                
+                const dx = ptr.currX - ptr.startX;
+                
+                if (ptr.isDragging) {
+                    if (isOpen) {
+                        if (dx > THRESHOLD_CLOSE) close();
+                        else open();
+                    } else {
+                        if (dx < -THRESHOLD_OPEN) open();
+                        else close();
+                    }
+                }
+
+                ptr.active = false;
+                ptr.isDragging = false;
+            };
+
+            dragBar.addEventListener('pointerdown', onPointerDown);
+            dragBar.addEventListener('pointermove', onPointerMove);
+            dragBar.addEventListener('pointerup', onPointerUp);
+            dragBar.addEventListener('pointercancel', onPointerUp);
+            
+            modal.addEventListener('pointerdown', (e) => {
+                if (e.target === modal && isOpen) close();
+            });
+
+            closeBtn.addEventListener('click', close);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isOpen) close();
+            });
+
+            return { open, close, toggle, isOpen: () => isOpen };
+        })();
+
+        // ==========================================
+        // CORREÇÃO CRÍTICA: TOUCHMOVE GLOBAL
+        // ==========================================
+        document.addEventListener('touchmove', (e) => {
+            const target = e.target;
+            if (target.closest('#math-modal') || target.closest('#modal-box')) {
+                return; 
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        // ==========================================
+        // 6. CONTROLES E FÍSICA
+        // ==========================================
+        function setupControls() {
+            const jC = document.getElementById('joystick-container');
+            const jS = document.getElementById('joystick-stick');
+            let tId = null, cX, cY;
+            const maxD = 35;
+
+            jC.addEventListener('touchstart', e => { e.preventDefault(); tId = e.changedTouches[0].identifier; const r = jC.getBoundingClientRect(); cX = r.left + r.width/2; cY = r.top + r.height/2; joystickData.active = true; jS.classList.add('active'); updateJ(e.changedTouches[0].clientX, e.changedTouches[0].clientY); });
+            jC.addEventListener('touchmove', e => { e.preventDefault(); if(!joystickData.active) return; for(let t of e.changedTouches) if(t.identifier === tId) updateJ(t.clientX, t.clientY); });
+            jC.addEventListener('touchend', e => { e.preventDefault(); for(let t of e.changedTouches) if(t.identifier === tId) resetJ(); });
+            
+            function updateJ(x, y) {
+                const dx = x - cX, dy = y - cY;
+                const d = Math.min(Math.sqrt(dx*dx + dy*dy), maxD);
+                const a = Math.atan2(dy, dx);
+                const sx = Math.cos(a)*d, sy = Math.sin(a)*d;
+                jS.style.transform = `translate(calc(-50% + ${sx}px), calc(-50% + ${sy}px))`;
+                joystickData.x = sx/maxD; 
+                joystickData.y = sy/maxD;
+            }
+            function resetJ() { joystickData.active = false; joystickData.x = 0; joystickData.y = 0; jS.classList.remove('active'); jS.style.transform = 'translate(-50%, -50%)'; }
+
+            let mD = false;
+            jC.addEventListener('mousedown', e => { mD = true; const r = jC.getBoundingClientRect(); cX = r.left + r.width/2; cY = r.top + r.height/2; joystickData.active = true; updateJ(e.clientX, e.clientY); });
+            document.addEventListener('mousemove', e => { if(mD) updateJ(e.clientX, e.clientY); });
+            document.addEventListener('mouseup', () => { mD = false; resetJ(); });
+
+            document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key.toLowerCase() === 'e') toggleVehicle(); });
+            document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+            document.getElementById('btn-enter').addEventListener('click', toggleVehicle);
+            document.getElementById('btn-scan').addEventListener('click', scanHouse);
+            
+            document.getElementById('btn-clear-coords').addEventListener('click', () => {
+                collectedCoords.clear();
+                updateCoordsDisplay();
+                showNotification('🗑️ Coordenadas limpas com sucesso!', '#ff0055');
+            });
+            
+            document.getElementById('btn-copy-77').addEventListener('click', () => {
+                if (lastScanData && lastScanData.full77) {
+                    navigator.clipboard.writeText(lastScanData.full77).then(() => {
+                        const btn = document.getElementById('btn-copy-77');
+                        const original = btn.textContent;
+                        btn.textContent = '✅ COPIADO!';
+                        setTimeout(() => btn.textContent = original, 1500);
+                    }).catch(() => {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = lastScanData.full77;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                    });
+                }
+            });
+            
+            document.getElementById('btn-copy-field').addEventListener('click', () => {
+                if (lastScanData && lastScanData.fieldAnalysis) {
+                    const analysisText = `
+=== ANÁLISE DO CAMPO FINITO ECDSA-SECP256k1 ===
+
+Valor Máximo (n = 2²⁵⁶ - 1):
+${FIELD_MAX_VALUE.toString()}
+
+Número Decimal Coletado (77 casas):
+0.${lastScanData.full77}
+
+Valor Inteiro Equivalente:
+${lastScanData.fieldAnalysis.integerValueStr}
+
+Valor Inteiro (Hex):
+${lastScanData.fieldAnalysis.integerValueHex}
+
+Percentual do Campo Finito:
+${lastScanData.fieldAnalysis.percentFormatted}
+                    `.trim();
+                    
+                    navigator.clipboard.writeText(analysisText).then(() => {
+                        const btn = document.getElementById('btn-copy-field');
+                        const original = btn.textContent;
+                        btn.textContent = '✅ ANÁLISE COPIADA!';
+                        setTimeout(() => btn.textContent = original, 1500);
+                    }).catch(() => {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = analysisText;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                    });
+                }
+            });
+        }
+
+        function toggleVehicle() {
+            if (gameState.mode === 'walking') {
+                if (player.position.distanceTo(car.position) < 8) {
+                    gameState.mode = 'driving';
+                    
+                    scene.remove(player);
+                    car.add(player);
+                    
+                    player.position.set(0, 0, 0);
+                    player.scale.set(0.5, 0.5, 0.5);
+                    player.visible = true;
+                    
+                    sphereShell.material.emissiveIntensity = 0.8;
+                    sphereShell.material.opacity = 0.35;
+                    sphereGlow.scale.set(14, 14, 1);
+                    if (car.userData.pilotLight) car.userData.pilotLight.intensity = 2.5;
+                    
+                    document.getElementById('btn-enter').textContent = 'SAIR';
+                    showNotification('🛸 Piloto conectado à esfera', '#00ffff');
+                } else {
+                    showNotification('⚠️ Aproxime-se da esfera para entrar!', '#feca57');
+                }
+            } else {
+                gameState.mode = 'walking';
+                
+                car.remove(player);
+                scene.add(player);
+                
+                const exitOffset = new THREE.Vector3(0, 0, 6).applyAxisAngle(new THREE.Vector3(0, 1, 0), car.rotation.y);
+                player.position.copy(car.position).add(exitOffset);
+                player.position.y = 0;
+                player.scale.set(1, 1, 1);
+                player.visible = true;
+                
+                sphereShell.material.emissiveIntensity = 0.3;
+                sphereShell.material.opacity = 0.25;
+                sphereGlow.scale.set(10, 10, 1);
+                if (car.userData.pilotLight) car.userData.pilotLight.intensity = 1.5;
+                
+                document.getElementById('btn-enter').textContent = 'ESFERA';
+                showNotification('🚶 Piloto desconectado', '#00ffff');
+            }
+        }
+
+        function getInputVector() {
+            let ix = 0, iy = 0;
+            if (joystickData.active) {
+                ix = joystickData.x;
+                iy = joystickData.y;
+            } else {
+                if (keys['w']) iy -= 1;
+                if (keys['s']) iy += 1;
+                if (keys['a']) ix -= 1;
+                if (keys['d']) ix += 1;
+            }
+            if (!joystickData.active && (ix !== 0 || iy !== 0)) {
+                const len = Math.sqrt(ix*ix + iy*iy);
+                ix /= len; iy /= len;
+            }
+            return { x: ix, y: iy };
+        }
+
+        function updatePlayer() {
+            if (gameState.mode !== 'walking') return;
+            
+            const input = getInputVector();
+            if (input.x === 0 && input.y === 0) return;
+
+            const camDir = new THREE.Vector3();
+            camera.getWorldDirection(camDir);
+            const cameraYaw = Math.atan2(camDir.x, camDir.z);
+
+            const ix = input.x;
+            const iz = -input.y; 
+            const moveX = (ix * Math.cos(cameraYaw)) - (iz * Math.sin(cameraYaw));
+            const moveZ = (ix * Math.sin(cameraYaw)) + (iz * Math.cos(cameraYaw));
+
+            const sp = 0.75;
+            player.position.x += moveX * sp;
+            player.position.z += moveZ * sp;
+
+            for (let i = 0; i < validData.length; i++) {
+                const building = validData[i];
+                if (checkProximity(player.position, building.x3d, building.z3d)) {
+                    const coordNumber = generateDecimalNumber(building.x3d, building.z3d, building.mathX);
+                    if (collectedCoords.addCoordinate(coordNumber)) {
+                        console.log('📍 Coordenada coletada:', coordNumber);
+                        updateCoordsDisplay();
+                        showNotification(`📍 Coordenada coletada! (${collectedCoords.numbers.length}/11)`, '#00ff88');
+                        
+                        if (collectedCoords.isComplete()) {
+                            showNotification('🎉 COLEÇÃO COMPLETA! Escaneie um prédio para calcular.', '#feca57');
+                        }
+                    }
+                }
+            }
+
+            const targetRot = Math.atan2(moveX, moveZ);
+            let rotDiff = targetRot - player.rotation.y;
+            while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+            while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+            player.rotation.y += rotDiff * 0.2;
+        }
+
+        function updateCar() {
+            if (gameState.mode !== 'driving') return;
+            
+            const input = getInputVector();
+            let acc = 0, turn = 0;
+            
+            if (Math.abs(input.y) > 0.1) {
+                acc = -input.y * gameState.acceleration;
+            }
+            if (Math.abs(input.x) > 0.1) {
+                turn = input.x * gameState.turnSpeed;
+            }
+            
+            gameState.speed += acc; 
+            gameState.speed *= gameState.deceleration;
+            gameState.speed = Math.max(-50, Math.min(gameState.maxSpeed, gameState.speed));
+            
+            if (Math.abs(gameState.speed) > 0.5) {
+                const turnDir = gameState.speed > 0 ? 1 : -1;
+                car.rotation.y += turn * turnDir;
+                
+                const rollAmount = (gameState.speed * 0.05) * turnDir;
+                if (sphereShell) sphereShell.rotation.x += rollAmount;
+                if (sphereCore) sphereCore.rotation.x += rollAmount;
+            }
+            
+            const ms = gameState.speed * 0.19;
+            car.position.x += Math.sin(car.rotation.y) * ms;
+            car.position.z += Math.cos(car.rotation.y) * ms;
+        }
+
+        function updateCamera() {
+            const target = gameState.mode === 'driving' ? car : player;
+            const dist = gameState.mode === 'driving' ? 14 : 15;
+            const h = gameState.mode === 'driving' ? 8 : 10;
+            
+            const ang = target.rotation.y + Math.PI;
+            camera.position.x = target.position.x + Math.sin(ang) * dist;
+            camera.position.y = target.position.y + h;
+            camera.position.z = target.position.z + Math.cos(ang) * dist;
+            camera.lookAt(target.position.x, target.position.y + 2.5, target.position.z);
+        }
+
+        function updateMinimap() {
+            const c = document.getElementById('minimap-canvas');
+            const ctx = c.getContext('2d');
+            const sz = 140; c.width = sz; c.height = sz;
+            ctx.fillStyle = 'rgba(5, 5, 16, 0.9)'; ctx.fillRect(0, 0, sz, sz);
+            
+            const pos = gameState.mode === 'driving' ? car.position : player.position;
+            const cellPx = sz / (GRID_RADIUS * 2);
+            const cx = sz / 2, cy = sz / 2;
+
+            ctx.fillStyle = 'rgba(255, 0, 50, 0.2)';
+            for(let i=0; i<invalidData.length; i++) {
+                const h = invalidData[i];
+                const rx = (h.x3d - pos.x) / CELL_SIZE;
+                const rz = (h.z3d - pos.z) / CELL_SIZE;
+                const px = cx + rx * cellPx, py = cy + rz * cellPx;
+                if (px >= 0 && px <= sz && py >= 0 && py <= sz) {
+                    ctx.fillRect(px - cellPx/2 + 1, py - cellPx/2 + 1, cellPx - 2, cellPx - 2);
+                }
+            }
+
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.9)';
+            for(let i=0; i<validData.length; i++) {
+                const h = validData[i];
+                const rx = (h.x3d - pos.x) / CELL_SIZE;
+                const rz = (h.z3d - pos.z) / CELL_SIZE;
+                const px = cx + rx * cellPx, py = cy + rz * cellPx;
+                if (px >= 0 && px <= sz && py >= 0 && py <= sz) {
+                    ctx.beginPath();
+                    ctx.arc(px, py, cellPx/2 - 1, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+        }
+
+        function updateSphereAnimation() {
+            const t = Date.now() * 0.001;
+            
+            const floatY = 2.5 + Math.sin(t * 1.5) * 0.25;
+            if (sphereShell) sphereShell.position.y = floatY;
+            if (sphereRing) sphereRing.position.y = floatY;
+            if (sphereCore) sphereCore.position.y = floatY;
+            if (sphereGlow) sphereGlow.position.y = floatY;
+            if (car.userData.pilotLight) car.userData.pilotLight.position.y = floatY;
+            if (car.userData.ring2) car.userData.ring2.position.y = floatY;
+            
+            if (sphereRing) sphereRing.rotation.z += 0.015;
+            if (car.userData.ring2) car.userData.ring2.rotation.z -= 0.01;
+            
+            if (sphereCore) {
+                const pulse = 1 + Math.sin(t * 3) * 0.15;
+                sphereCore.scale.set(pulse, pulse, pulse);
+            }
+            
+            if (sphereGlow) {
+                const glowPulse = 1 + Math.sin(t * 2) * 0.1;
+                const baseScale = gameState.mode === 'driving' ? 14 : 10;
+                sphereGlow.scale.set(baseScale * glowPulse, baseScale * glowPulse, 1);
+            }
+        }
+
+        // ==========================================
+        // 7. LOOP E LOADING
+        // ==========================================
+        function simulateLoading() {
+            let p = 0;
+            const int = setInterval(() => {
+                p += Math.random() * 15;
+                if (p >= 100) { 
+                    p = 100; 
+                    clearInterval(int); 
+                    setTimeout(() => { 
+                        document.getElementById('loading-screen').classList.add('hidden'); 
+                        gameState.loading = false; 
+                        checkGridUpdate(); 
+                    }, 500); 
+                }
+                document.getElementById('loading-progress').style.width = p + '%';
+                document.getElementById('loading-text').textContent = p < 50 ? 'Mapeando Campo Finito Fp...' : 'Gerando Texturas de Terrenos 🚫...';
+            }, 100);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!gameState.loading) {
+                updatePlayer();
+                updateCar();
+                updateCamera();
+                updateSphereAnimation();
+                checkGridUpdate();
+                updateRaycaster();
+                updateMinimap();
+                
+                if(invalidMesh && invalidMesh.material) {
+                    invalidMesh.material.emissiveIntensity = 0.2 + Math.sin(Date.now() * 0.003) * 0.15;
+                }
+            }
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>
